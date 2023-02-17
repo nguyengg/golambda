@@ -1,0 +1,72 @@
+package cloudwatchevent
+
+import (
+	"context"
+	"fmt"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-lambda-go/lambdacontext"
+	"log"
+	"github.com/nguyengg/golambda/metrics"
+	"time"
+)
+
+// Handler for CloudWatch events.
+type Handler func(ctx context.Context, request events.CloudWatchEvent) error
+
+// Starts the Lambda runtime loop.
+func Start(handler Handler) {
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.LUTC | log.Lshortfile | log.Lmsgprefix)
+
+	lambda.Start(func(ctx context.Context, request events.CloudWatchEvent) (err error) {
+		startTime := time.Now().UTC()
+
+		lc, ok := lambdacontext.FromContext(ctx)
+		if !ok {
+			return fmt.Errorf("no lambda context")
+		}
+		log.SetPrefix(lc.AwsRequestID + " ")
+
+		var m *metrics.Metrics
+
+		defer func() {
+			switch r := recover(); {
+			case r != nil:
+				if e, ok := r.(error); ok {
+					log.Printf("panicked with error: %v", e)
+					err = e
+					break
+				}
+				log.Printf("panicked due to: %v", r)
+				err = fmt.Errorf("recover: %v", r)
+				if m != nil {
+					_ = m.Faulted()
+					_ = m.Panicked()
+				}
+			case err != nil:
+				log.Printf("failed with error: %v", err)
+				if m != nil {
+					_ = m.Faulted()
+				}
+			}
+
+			if m == nil {
+				log.Printf("ERROR cannot emit metrics since it wasn't created properly")
+				return
+			}
+			fmt.Printf("%s\n", m.JSONString())
+		}()
+
+		m = metrics.NewWithStartTime(startTime)
+		_ = m.SetProperty("lambdaRequestId", lc.AwsRequestID)
+		_ = m.SetProperty("cloudWatchEventId", request.ID)
+		_ = m.SetProperty("detailType", request.DetailType)
+		_ = m.SetProperty("source", request.Source)
+		_ = m.SetProperty("accountId", request.AccountID)
+		_ = m.SetProperty("region", request.Region)
+		_ = m.SetProperty("resources", request.Resources)
+
+		err = handler(metrics.NewContext(ctx, m), request)
+		return
+	})
+}
