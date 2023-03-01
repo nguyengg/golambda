@@ -6,9 +6,9 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
+	"github.com/nguyengg/golambda/metrics"
 	"log"
 	"net/http"
-	"github.com/nguyengg/golambda/metrics"
 	"time"
 )
 

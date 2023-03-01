@@ -3,8 +3,8 @@ package framework
 import (
 	"bytes"
 	"compress/gzip"
-	"log"
 	"github.com/nguyengg/golambda/metrics"
+	"log"
 	"strconv"
 	"strings"
 )

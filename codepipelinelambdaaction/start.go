@@ -6,8 +6,8 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
-	"log"
 	"github.com/nguyengg/golambda/metrics"
+	"log"
 	"time"
 )
 

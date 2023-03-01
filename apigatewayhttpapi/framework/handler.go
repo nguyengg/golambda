@@ -3,10 +3,10 @@ package framework
 import (
 	"context"
 	"github.com/aws/aws-lambda-go/events"
-	"net/http"
-	"net/url"
 	v2 "github.com/nguyengg/golambda/apigatewayhttpapi"
 	"github.com/nguyengg/golambda/metrics"
+	"net/http"
+	"net/url"
 )
 
 // Context contains the original context from Lambda and methods to read attributes of the
