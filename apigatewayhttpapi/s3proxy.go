@@ -17,7 +17,8 @@ import (
 	"time"
 )
 
-// ProxyS3 will call S3 with the appropriate method and return the response as either plain text or base64-encoded data.
+// ProxyS3 will call S3 with the appropriate GET or HEAD method and return the response as either plain text or
+// base64-encoded data.
 //
 // The argument method will determine whether ProxyS3GET or ProxyS3HEAD will be used. If the method is not recognized,
 // http.StatusMethodNotAllowed will be returned.

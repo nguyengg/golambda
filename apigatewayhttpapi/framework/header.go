@@ -5,7 +5,9 @@ import (
 	"time"
 )
 
-type WithResponseHeaders interface {
+// WithResponseCachingHeaders allows implement types to generate ETag and Last-Modified response headers for caching
+// purposes.
+type WithResponseCachingHeaders interface {
 	ETag() *ETag
 	LastModified() *time.Time
 }
@@ -16,6 +18,7 @@ type ETag struct {
 	Weak  bool
 }
 
+// NewStrongETag returns an ETag with ETag.Weak set to false.
 func NewStrongETag(value string) ETag {
 	return ETag{
 		Value: value,
@@ -23,6 +26,7 @@ func NewStrongETag(value string) ETag {
 	}
 }
 
+// NewWeakETag returns an ETag with ETag.Weak set to true.
 func NewWeakETag(value string) ETag {
 	return ETag{
 		Value: value,
@@ -30,6 +34,7 @@ func NewWeakETag(value string) ETag {
 	}
 }
 
+// String implements the fmt.Stringer interface. If ETag.Weak is true, the prefix "W/" will be added.
 func (e ETag) String() string {
 	if e.Weak {
 		return `W/"` + e.Value + `"`
@@ -37,10 +42,11 @@ func (e ETag) String() string {
 	return `"` + e.Value + `"`
 }
 
-func (c *Context) SetResponseHeaders(v WithResponseHeaders) {
+// SetResponseCachingHeaders adds ETag and Last-Modified headers to the response.
+func (c *Context) SetResponseCachingHeaders(v WithResponseCachingHeaders) {
 	etag := v.ETag()
 	if etag != nil {
-		c.responseHeader.Set("Etag", etag.String())
+		c.responseHeader.Set("ETag", etag.String())
 	}
 
 	t := v.LastModified()

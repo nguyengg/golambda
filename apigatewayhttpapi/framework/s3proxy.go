@@ -6,7 +6,10 @@ import (
 	"log"
 )
 
-func (c Context) ProxyS3(client *s3.Client, bucket, key string) error {
+// ProxyS3 will call S3 with the appropriate GET or HEAD method and sets the response accordingly.
+// See apigatewayhttpapi.ProxyS3. Please be mindful of the payload limit; this method cannot be used to return files
+// larger than ~6MB.
+func (c *Context) ProxyS3(client *s3.Client, bucket, key string) error {
 	res, err := apigatewayhttpapi.ProxyS3(c.ctx, client, c.Method(), bucket, key)
 	if err != nil {
 		log.Printf("ERROR proxy S3: %v", err)

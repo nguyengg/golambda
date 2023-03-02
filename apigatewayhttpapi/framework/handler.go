@@ -20,7 +20,7 @@ type Context struct {
 	responseHeader     http.Header
 }
 
-// Starts the Lambda runtime.
+// Start starts the Lambda runtime loop.
 func Start(handler func(*Context) error) {
 	v2.Start(func(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 		c := &Context{
@@ -55,22 +55,22 @@ func Start(handler func(*Context) error) {
 	})
 }
 
-// Returns the original context of the request.
-func (c Context) Context() context.Context {
+// Context returns the original context.Context of the request.
+func (c *Context) Context() context.Context {
 	return c.ctx
 }
 
-// Returns the current metrics from context.
-func (c Context) Metrics() *metrics.Metrics {
+// Metrics returns the current metrics.Metrics instance from context.
+func (c *Context) Metrics() *metrics.Metrics {
 	return metrics.MustFromContext(c.ctx)
 }
 
-// Returns the original request.
-func (c Context) Request() *events.APIGatewayV2HTTPRequest {
+// Request returns the original events.APIGatewayV2HTTPRequest request instance.
+func (c *Context) Request() *events.APIGatewayV2HTTPRequest {
 	return c.request
 }
 
-// Returns the response.
-func (c Context) Response() *events.APIGatewayV2HTTPResponse {
+// Response returns the events.APIGatewayV2HTTPResponse instance that will be used to return contents back to caller.
+func (c *Context) Response() *events.APIGatewayV2HTTPResponse {
 	return c.response
 }

@@ -20,7 +20,14 @@ func Start(handler Handler) {
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.LUTC | log.Lshortfile | log.Lmsgprefix)
 
 	lambda.Start(func(ctx context.Context, request events.APIGatewayV2HTTPRequest) (response events.APIGatewayV2HTTPResponse, err error) {
-		startTime := time.Now().UTC()
+		// try to use the timeEpoch from requestContext as the start time.
+		// if not given then use now.
+		var startTime time.Time
+		if request.RequestContext.TimeEpoch == 0 {
+			startTime = time.UnixMicro(request.RequestContext.TimeEpoch)
+		} else {
+			startTime = time.Now().UTC()
+		}
 
 		lc, ok := lambdacontext.FromContext(ctx)
 		if !ok {
