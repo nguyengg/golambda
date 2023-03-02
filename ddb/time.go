@@ -8,29 +8,49 @@ import (
 	"time"
 )
 
-// The string layout as well as DynamoDB string value of Timestamp.
+// TimestampLayout is the string layout as well as DynamoDB string value of Timestamp.
 const TimestampLayout = "2006-01-02T15:04:05.000Z"
 
-// Timestamp is epoch second in UTC, formatted by RFC3339 but marshalled as a number.
+// TTL (time-to-live) is epoch second in UTC, formatted by RFC3339 but marshalled as a number.
 type TTL time.Time
 
 // Timestamp is epoch second in UTC, formatted by RFC3339, marshalled as a string.
 type Timestamp time.Time
 
+// TimestampFromTime creates an instance of Timestamp from the specified time.Time.
 func TimestampFromTime(t time.Time) *Timestamp {
 	ts := Timestamp(t)
 	return &ts
 }
 
-func (ts Timestamp) String() string {
+// TimestampToTime returns the underlying time.Time instance from the specified Timestamp. Return nil if the provided
+// Timestamp is nil.
+func TimestampToTime(ts *Timestamp) *time.Time {
+	if ts == nil {
+		return nil
+	}
+
+	t := time.Time(*ts)
+	return &t
+}
+
+// ToTime returns the underlying time.Time instance.
+func (ts *Timestamp) ToTime() time.Time {
+	return time.Time(*ts)
+}
+
+// String implements the fmt.Stringer interface.
+func (ts *Timestamp) String() string {
 	return ts.Format(TimestampLayout)
 }
 
-func (ts Timestamp) Format(layout string) string {
-	return time.Time(ts).Format(layout)
+// Format returns a string representation of the Timestamp using specified layout.
+func (ts *Timestamp) Format(layout string) string {
+	return time.Time(*ts).Format(layout)
 }
 
-func (ts Timestamp) MarshalJSON() ([]byte, error) {
+// MarshalJSON implements the json.Marshaler interface.
+func (ts *Timestamp) MarshalJSON() ([]byte, error) {
 	data, err := json.Marshal(ts.Format(TimestampLayout))
 	if err != nil {
 		panic(err)
@@ -38,6 +58,7 @@ func (ts Timestamp) MarshalJSON() ([]byte, error) {
 	return data, nil
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (ts *Timestamp) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {
@@ -50,6 +71,7 @@ func (ts *Timestamp) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// UnmarshalDynamoDBAttributeValue implements the attributevalue.Unmarshaler interface.
 func (ts *Timestamp) UnmarshalDynamoDBAttributeValue(av dynamodbtypes.AttributeValue) error {
 	avS, ok := av.(*dynamodbtypes.AttributeValueMemberS)
 	if !ok {
@@ -70,27 +92,52 @@ func (ts *Timestamp) UnmarshalDynamoDBAttributeValue(av dynamodbtypes.AttributeV
 	return nil
 }
 
-func (ts Timestamp) MarshalDynamoDBAttributeValue() (dynamodbtypes.AttributeValue, error) {
-	return &dynamodbtypes.AttributeValueMemberS{Value: time.Time(ts).Format(TimestampLayout)}, nil
+// MarshalDynamoDBAttributeValue implements the attributevalue.Marshaler
+func (ts *Timestamp) MarshalDynamoDBAttributeValue() (dynamodbtypes.AttributeValue, error) {
+	return &dynamodbtypes.AttributeValueMemberS{Value: time.Time(*ts).Format(TimestampLayout)}, nil
 }
 
+// TTLFromTime creates an instance of TTL from the specified time.Time.
 func TTLFromTime(t time.Time) *TTL {
 	ttl := TTL(t)
 	return &ttl
 }
 
-func (ttl TTL) String() string {
-	return time.Time(ttl).Format(time.RFC3339)
+// TTLToTime returns the underlying time.Time instance from the specified TTL. Return nil if the provided TTL is nil.
+func TTLToTime(ts *Timestamp) *time.Time {
+	if ts == nil {
+		return nil
+	}
+
+	t := time.Time(*ts)
+	return &t
 }
 
-func (ttl TTL) MarshalJSON() ([]byte, error) {
-	data, err := json.Marshal(time.Time(ttl).Format(time.RFC3339))
+// ToTime returns the underlying time.Time instance.
+func (ttl *TTL) ToTime() time.Time {
+	return time.Time(*ttl)
+}
+
+// String implements the fmt.Stringer interface.
+func (ttl *TTL) String() string {
+	return time.Time(*ttl).Format(time.RFC3339)
+}
+
+// Format returns a string representation of the TTL using specified layout.
+func (ttl *TTL) Format(layout string) string {
+	return time.Time(*ttl).Format(layout)
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (ttl *TTL) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(time.Time(*ttl).Format(time.RFC3339))
 	if err != nil {
 		panic(err)
 	}
 	return data, nil
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (ttl *TTL) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {
@@ -103,6 +150,7 @@ func (ttl *TTL) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// UnmarshalDynamoDBAttributeValue implements the attributevalue.Unmarshaler interface.
 func (ttl *TTL) UnmarshalDynamoDBAttributeValue(av dynamodbtypes.AttributeValue) error {
 	avN, ok := av.(*dynamodbtypes.AttributeValueMemberN)
 	if !ok {
@@ -123,6 +171,7 @@ func (ttl *TTL) UnmarshalDynamoDBAttributeValue(av dynamodbtypes.AttributeValue)
 	return nil
 }
 
-func (ttl TTL) MarshalDynamoDBAttributeValue() (dynamodbtypes.AttributeValue, error) {
-	return &dynamodbtypes.AttributeValueMemberN{Value: strconv.FormatInt(time.Time(ttl).Unix(), 10)}, nil
+// MarshalDynamoDBAttributeValue implements the attributevalue.Marshaler
+func (ttl *TTL) MarshalDynamoDBAttributeValue() (dynamodbtypes.AttributeValue, error) {
+	return &dynamodbtypes.AttributeValueMemberN{Value: strconv.FormatInt(time.Time(*ttl).Unix(), 10)}, nil
 }
