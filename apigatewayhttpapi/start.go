@@ -76,8 +76,12 @@ func Start(handler Handler) {
 		}()
 
 		m = metrics.NewWithStartTime(startTime)
-		_ = m.SetProperty("lambdaRequestId", lc.AwsRequestID)
-		_ = m.SetProperty("apiGatewayRequestId", request.RequestContext.RequestID)
+		if lc.AwsRequestID != "" {
+			_ = m.SetProperty("lambdaRequestId", lc.AwsRequestID)
+		}
+		if request.RequestContext.RequestID != "" {
+			_ = m.SetProperty("apiGatewayRequestId", request.RequestContext.RequestID)
+		}
 		_ = m.SetProperty("path", request.RequestContext.HTTP.Path)
 		_ = m.SetProperty("method", request.RequestContext.HTTP.Method)
 		_ = m.SetProperty("stage", request.RequestContext.Stage)
