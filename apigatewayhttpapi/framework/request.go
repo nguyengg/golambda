@@ -36,7 +36,7 @@ func (c *Context) UnmarshalRequestBody(v interface{}) error {
 // RequestTimestamp returns the TimeEpoch of events.APIGatewayV2HTTPRequestContext wrapped as time.Time.
 // Check time.Time.IsZero in case the TimeEpoch is missing or 0.
 func (c *Context) RequestTimestamp() time.Time {
-	return time.UnixMicro(c.request.RequestContext.TimeEpoch)
+	return time.UnixMilli(c.request.RequestContext.TimeEpoch)
 }
 
 // RequestHeader returns the request header for the specified key.

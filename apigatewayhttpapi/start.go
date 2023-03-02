@@ -24,7 +24,7 @@ func Start(handler Handler) {
 		// if not given then use now.
 		var startTime time.Time
 		if request.RequestContext.TimeEpoch == 0 {
-			startTime = time.UnixMicro(request.RequestContext.TimeEpoch)
+			startTime = time.UnixMilli(request.RequestContext.TimeEpoch)
 		} else {
 			startTime = time.Now().UTC()
 		}
