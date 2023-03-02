@@ -2,10 +2,10 @@ package metrics
 
 import (
 	"context"
-	"errors"
 	. "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/smithy-go"
 	"github.com/aws/smithy-go/middleware"
+	"github.com/nguyengg/golambda/logerror"
 	"log"
 	"strings"
 	"time"
@@ -41,34 +41,14 @@ func NewClientSideMetricsMiddlewareWithId(id string) middleware.DeserializeMiddl
 			_ = m.AddCount(key+".failure", 0)
 
 			if err != nil {
-				service := "-"
-				operation := "-"
-				code := "-"
-				message := "-"
-				fault := smithy.FaultUnknown
-
-				var oe *smithy.OperationError
-				if errors.As(err, &oe) {
-					service = oe.Service()
-					operation = oe.Operation()
-				}
-
-				var ae smithy.APIError
-				if errors.As(err, &ae) {
-					code = ae.ErrorCode()
-					message = ae.ErrorMessage()
-					fault = ae.ErrorFault()
-				}
+				_, _, _, _, fault := logerror.LogAPIError(err)
 
 				switch fault {
 				case smithy.FaultClient:
-					log.Printf("ERROR %s.%s error: (%s) %s ", service, operation, code, message)
 					_ = m.AddCount(key+".error", 1)
 				case smithy.FaultServer:
-					log.Printf("ERROR %s.%s fault: (%s) %s ", service, operation, code, message)
 					_ = m.AddCount(key+".fault", 1)
 				default:
-					log.Printf("ERROR %s.%s failure: (%s) %s ", service, operation, code, message)
 					_ = m.AddCount(key+".failure", 1)
 				}
 			}
