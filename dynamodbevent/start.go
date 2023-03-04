@@ -1,4 +1,4 @@
-package cloudwatchevent
+package dynamodbevent
 
 import (
 	"context"
