@@ -11,16 +11,20 @@ import (
 )
 
 // An Updatable provides convenient method Update to update the item in database.
+//
+// This interface implements Savable and Deletable as well.
 type Updatable interface {
-	// Returns the table name that is used in dynamodb.UpdateItemInput.
+	// GetTableName returns the table name that is used in dynamodb.UpdateItemInput.
 	GetTableName() string
-	// Returns the key map that is used in dynamodb.UpdateItemInput.
+	// GetKey returns the key map that is used in dynamodb.UpdateItemInput.
 	GetKey() map[string]dynamodbtypes.AttributeValue
-	// Returns the dynamodb map representing this Savable.
+	// Marshal returns the dynamodb map representing this Updatable.
 	Marshal() (map[string]dynamodbtypes.AttributeValue, error)
 }
 
-// Input is guaranteed to exist when passed into the first modifier.
+// UpdateOpts contains the various constructs that are used during the process of customising an UpdateItem request.
+//
+// Update will guarantee that Input exists when passed into the first modifier
 type UpdateOpts struct {
 	Input     *dynamodb.UpdateItemInput
 	Condition *expression.ConditionBuilder
@@ -89,62 +93,62 @@ func UpdateReturnUpdatedNewValues(opts *UpdateOpts) {
 	opts.Input.ReturnValues = dynamodbtypes.ReturnValueUpdatedNew
 }
 
-// See condition.And. Return itself for chaining.
+// And adds a condition.And condition. Return itself for chaining.
 func (opts *UpdateOpts) And(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *UpdateOpts {
 	opts.Condition = condition.And(opts.Condition, right, other...)
 	return opts
 }
 
-// See condition.And. Return itself for chaining.
+// Or adds a condition.Or condition. Return itself for chaining.
 func (opts *UpdateOpts) Or(right expression.ConditionBuilder, other ...expression.ConditionBuilder) *UpdateOpts {
 	opts.Condition = condition.Or(opts.Condition, right, other...)
 	return opts
 }
 
-// See update.Add. Return itself for chaining.
+// Add adds an update.Add statement. Return itself for chaining.
 func (opts *UpdateOpts) Add(name expression.NameBuilder, value expression.ValueBuilder) *UpdateOpts {
 	opts.Update = update.Add(opts.Update, name, value)
 	return opts
 }
 
-// See update.Set. Return itself for chaining.
+// Set adds an update.Set statement. Return itself for chaining.
 func (opts *UpdateOpts) Set(name expression.NameBuilder, value expression.ValueBuilder) *UpdateOpts {
 	opts.Update = update.Set(opts.Update, name, value)
 	return opts
 }
 
-// See update.Delete. Return itself for chaining.
+// Delete adds an update.Delete statement. Return itself for chaining.
 func (opts *UpdateOpts) Delete(name expression.NameBuilder, value expression.ValueBuilder) *UpdateOpts {
 	opts.Update = update.Delete(opts.Update, name, value)
 	return opts
 }
 
-// See update.Remove. Return itself for chaining.
+// Remove adds an update.Remove statement. Return itself for chaining.
 func (opts *UpdateOpts) Remove(name expression.NameBuilder) *UpdateOpts {
 	opts.Update = update.Remove(opts.Update, name)
 	return opts
 }
 
-// Conditionally replace or remove the attribute.
+// SetOrRemove adds either Set or Remove statement for the attribute specified by the name parameter.
 //
-// If cond is true, UpdateOpts.Update will always receive an update.Set to set the name to the value.
+// If set is true, UpdateOpts.Update will always receive an update.Set to set the name to the value.
 //
-// If cond is false, only when remove is true then an update.Remove will be added. Otherwise, nothing is done.
+// If set is false, only when remove is true then an update.Remove will be added. Otherwise, nothing is done.
 //
-// | cond  | remove | effect
+// | set   | remove | effect
 // | true  | *      | update.Set
 // | false | true   | update.Remove
 // | false | false  | no-op
 //
-// This is useful for distinguishing between PUT/POST (pass true for remove) that replaces attributes vs. PATCH that
-// will only update attributes that are non-nil.
-func (opts *UpdateOpts) ReplaceOrRemove(cond, replace bool, name expression.NameBuilder, value func() expression.ValueBuilder) *UpdateOpts {
-	if cond {
+// This is useful for distinguishing between PUT/POST (remove=true) that replaces attributes vs. PATCH (remove=false)
+// that will only update attributes that are non-nil.
+func (opts *UpdateOpts) SetOrRemove(set, remove bool, name expression.NameBuilder, value func() expression.ValueBuilder) *UpdateOpts {
+	if set {
 		opts.Update = update.Set(opts.Update, name, value())
 		return opts
 	}
 
-	if replace {
+	if remove {
 		opts.Update = update.Remove(opts.Update, name)
 		return opts
 	}
@@ -152,7 +156,7 @@ func (opts *UpdateOpts) ReplaceOrRemove(cond, replace bool, name expression.Name
 	return opts
 }
 
-func (opts UpdateOpts) apply() error {
+func (opts *UpdateOpts) apply() error {
 	builder := expression.NewBuilder()
 	hasExpressions := false
 

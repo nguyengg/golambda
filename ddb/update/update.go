@@ -2,7 +2,7 @@ package update
 
 import "github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 
-// Adds an ADD update expression to the possibly nil update expression.UpdateBuilder.
+// Add adds an ADD update expression to the nil-safe update expression.UpdateBuilder.
 // Returns non-nil expression.ConditionBuilder.
 func Add(update *expression.UpdateBuilder, name expression.NameBuilder, value expression.ValueBuilder) *expression.UpdateBuilder {
 	if update == nil {
@@ -14,7 +14,7 @@ func Add(update *expression.UpdateBuilder, name expression.NameBuilder, value ex
 	}
 }
 
-// Adds a SET update expression to the possibly nil update expression.UpdateBuilder.
+// Set adds a SET update expression to the nil-safe update expression.UpdateBuilder.
 // Returns non-nil expression.ConditionBuilder.
 func Set(update *expression.UpdateBuilder, name expression.NameBuilder, value expression.ValueBuilder) *expression.UpdateBuilder {
 	if update == nil {
@@ -26,7 +26,7 @@ func Set(update *expression.UpdateBuilder, name expression.NameBuilder, value ex
 	}
 }
 
-// Adds a DELETE update expression to the possibly nil update expression.UpdateBuilder.
+// Delete adds a DELETE update expression to the nil-safe update expression.UpdateBuilder.
 // Returns non-nil expression.ConditionBuilder.
 func Delete(update *expression.UpdateBuilder, name expression.NameBuilder, value expression.ValueBuilder) *expression.UpdateBuilder {
 	if update == nil {
@@ -38,7 +38,7 @@ func Delete(update *expression.UpdateBuilder, name expression.NameBuilder, value
 	}
 }
 
-// Adds an Remove update expression to the possibly nil update expression.UpdateBuilder.
+// Remove adds an Remove update expression to the nil-safe update expression.UpdateBuilder.
 // Returns non-nil expression.ConditionBuilder.
 func Remove(update *expression.UpdateBuilder, name expression.NameBuilder) *expression.UpdateBuilder {
 	if update == nil {
