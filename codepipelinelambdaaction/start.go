@@ -14,7 +14,7 @@ import (
 // Handler for CodePipeline Lambda action.
 type Handler func(ctx context.Context, request events.CodePipelineEvent) (err error)
 
-// Starts the Lambda runtime loop.
+// Start starts the Lambda runtime loop for the specified Handler.
 func Start(handler Handler) {
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.LUTC | log.Lshortfile | log.Lmsgprefix)
 
@@ -33,18 +33,18 @@ func Start(handler Handler) {
 			switch r := recover(); {
 			case r != nil:
 				if e, ok := r.(error); ok {
-					log.Printf("panicked with error: %v", e)
+					log.Printf("ERROR panicked with error: %v", e)
 					err = e
 					break
 				}
-				log.Printf("panicked due to: %v", r)
+				log.Printf("ERROR panicked due to: %v", r)
 				err = fmt.Errorf("recover: %v", r)
 				if m != nil {
 					_ = m.Faulted()
 					_ = m.Panicked()
 				}
 			case err != nil:
-				log.Printf("failed with error: %v", err)
+				log.Printf("ERROR failed with error: %v", err)
 				if m != nil {
 					_ = m.Faulted()
 				}

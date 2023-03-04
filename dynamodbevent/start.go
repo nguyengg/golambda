@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-// Handler for CloudWatch events.
-type Handler func(ctx context.Context, request events.CloudWatchEvent) error
+// Handler for DynamoDB events.
+type Handler func(ctx context.Context, request events.DynamoDBEvent) error
 
-// Start starts the Lambda runtime loop for the specified Handler.
+// Start starts the Lambda runtime loop with the specified Handler.
 func Start(handler Handler) {
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.LUTC | log.Lshortfile | log.Lmsgprefix)
 
-	lambda.Start(func(ctx context.Context, request events.CloudWatchEvent) (err error) {
+	lambda.Start(func(ctx context.Context, request events.DynamoDBEvent) (err error) {
 		startTime := time.Now().UTC()
 
 		lc, ok := lambdacontext.FromContext(ctx)
@@ -59,12 +59,7 @@ func Start(handler Handler) {
 
 		m = metrics.NewWithStartTime(startTime)
 		_ = m.SetProperty("lambdaRequestId", lc.AwsRequestID)
-		_ = m.SetProperty("cloudWatchEventId", request.ID)
-		_ = m.SetProperty("detailType", request.DetailType)
-		_ = m.SetProperty("source", request.Source)
-		_ = m.SetProperty("accountId", request.AccountID)
-		_ = m.SetProperty("region", request.Region)
-		_ = m.SetProperty("resources", request.Resources)
+		_ = m.AddCount("recordCount", int64(len(request.Records)))
 
 		err = handler(metrics.NewContext(ctx, m), request)
 		return
