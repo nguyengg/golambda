@@ -17,6 +17,18 @@ type TTL time.Time
 // Timestamp is epoch second in UTC, formatted by RFC3339, marshalled as a string.
 type Timestamp time.Time
 
+// TimestampFromString creates an instance of Timestamp from parsing the specified string.
+//
+// If the string fails to be parsed using layout TimestampLayout, a nil Timestamp is returned.
+func TimestampFromString(value string) (*Timestamp, error) {
+	t, err := time.Parse(TimestampLayout, value)
+	if err != nil {
+		return nil, err
+	}
+	ts := Timestamp(t)
+	return &ts, nil
+}
+
 // TimestampFromTime creates an instance of Timestamp from the specified time.Time.
 func TimestampFromTime(t time.Time) *Timestamp {
 	ts := Timestamp(t)
