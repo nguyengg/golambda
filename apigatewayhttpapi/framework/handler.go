@@ -60,6 +60,17 @@ func (c *Context) Context() context.Context {
 	return c.ctx
 }
 
+// WithValue replaces the underlying Context with the result from calling context.WithValue.
+func (c *Context) WithValue(key, value any) context.Context {
+	c.ctx = context.WithValue(c.ctx, key, value)
+	return c.ctx
+}
+
+// Value returns the value associated with the underlying Context that has been added with WithValue.
+func (c *Context) Value(key any) any {
+	return c.ctx.Value(key)
+}
+
 // Metrics returns the current metrics.Metrics instance from context.
 func (c *Context) Metrics() *metrics.Metrics {
 	return metrics.MustFromContext(c.ctx)
