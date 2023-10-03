@@ -19,10 +19,11 @@ func StartHandlerFunc[TIn any, TOut any, H lambda.HandlerFunc[TIn, TOut]](handle
 	opts := start.New(options)
 
 	lambda.StartHandlerFunc(func(ctx context.Context, in TIn) (out TOut, err error) {
-		ctx, m := metrics.NewSimpleMetricsContext(
+		m := metrics.NewSimpleMetricsContext(
 			opts.LoggerProvider(ctx).WithContext(ctx),
 			"",
 			0)
+		ctx = m.WithContext(ctx)
 
 		if !opts.DisableSetUpGlobalLogger {
 			defer logsupport.SetUpGlobalLogger(ctx)()

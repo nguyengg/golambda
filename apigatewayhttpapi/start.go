@@ -20,10 +20,11 @@ func Start(handler Handler, options ...start.Option) {
 	opts := start.New(options)
 
 	lambda.StartHandlerFunc(func(ctx context.Context, request events.APIGatewayV2HTTPRequest) (response events.APIGatewayV2HTTPResponse, err error) {
-		ctx, m := metrics.NewSimpleMetricsContext(
+		m := metrics.NewSimpleMetricsContext(
 			opts.LoggerProvider(ctx).WithContext(ctx),
 			request.RequestContext.RequestID,
 			request.RequestContext.TimeEpoch)
+		ctx = m.WithContext(ctx)
 
 		if !opts.DisableSetUpGlobalLogger {
 			defer logsupport.SetUpGlobalLogger(ctx)()

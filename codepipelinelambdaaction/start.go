@@ -20,10 +20,11 @@ func Start(handler Handler, options ...start.Option) {
 	opts := start.New(options)
 
 	lambda.Start(func(ctx context.Context, request events.CodePipelineEvent) (err error) {
-		ctx, m := metrics.NewSimpleMetricsContext(
+		m := metrics.NewSimpleMetricsContext(
 			opts.LoggerProvider(ctx).WithContext(ctx),
 			"",
 			0)
+		ctx = m.WithContext(ctx)
 
 		if !opts.DisableSetUpGlobalLogger {
 			defer logsupport.SetUpGlobalLogger(ctx)()

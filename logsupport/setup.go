@@ -33,8 +33,7 @@ func SetUpLogger(ctx context.Context, logger *log.Logger) func() {
 
 	logger.SetFlags(RecommendedLogFlag)
 
-	lc, ok := lambdacontext.FromContext(ctx)
-	if ok {
+	if lc, ok := lambdacontext.FromContext(ctx); ok {
 		logger.SetPrefix(lc.AwsRequestID + " ")
 	}
 

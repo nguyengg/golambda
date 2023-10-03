@@ -11,7 +11,7 @@ import (
 // Options provides a base struct for customisations to starting handler.
 type Options struct {
 	// LoggerProvider provides a new zerolog.Logger instance on every request.
-	LoggerProvider func(ctx context.Context) zerolog.Logger
+	LoggerProvider func(ctx context.Context) *zerolog.Logger
 
 	// DisableRequestDebugLogging disables logging the JSON-encoded request in DEBUG mode.
 	DisableRequestDebugLogging bool
@@ -46,10 +46,9 @@ type Option func(*Options)
 // New creates an initial Options and applies modifiers thereto.
 func New(options []Option) *Options {
 	opts := &Options{
-		LoggerProvider: func(ctx context.Context) zerolog.Logger {
+		LoggerProvider: func(ctx context.Context) *zerolog.Logger {
 			l := zerolog.New(os.Stderr)
-			l.WithContext(ctx)
-			return l
+			return &l
 		},
 	}
 
@@ -100,7 +99,7 @@ func DisableSetUpZeroLogGlobalLevel() Option {
 }
 
 // WithLoggerProvider allows customisation of the logger and its context on every request.
-func WithLoggerProvider(loggerProvider func(ctx context.Context) zerolog.Logger) Option {
+func WithLoggerProvider(loggerProvider func(ctx context.Context) *zerolog.Logger) Option {
 	return func(o *Options) {
 		o.LoggerProvider = loggerProvider
 	}

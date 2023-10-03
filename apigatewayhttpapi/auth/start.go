@@ -21,10 +21,11 @@ func StartV2(handler HandlerV2, options ...start.Option) {
 	opts := start.New(options)
 
 	lambda.Start(func(ctx context.Context, request events.APIGatewayV2CustomAuthorizerV2Request) (response events.APIGatewayV2CustomAuthorizerSimpleResponse, err error) {
-		ctx, m := metrics.NewSimpleMetricsContext(
+		m := metrics.NewSimpleMetricsContext(
 			zerolog.New(os.Stderr).WithContext(ctx),
 			request.RequestContext.RequestID,
 			request.RequestContext.TimeEpoch)
+		ctx = m.WithContext(ctx)
 
 		if !opts.DisableRequestDebugLogging && configsupport.IsDebug() {
 			data, err := json.Marshal(request)

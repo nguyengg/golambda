@@ -125,13 +125,22 @@ const (
 type metricsKey struct{}
 
 // Ctx returns the Metrics instance from the specified context if available.
+//
 // If not, a NullMetrics instance will be used.
 func Ctx(ctx context.Context) Metrics {
-	if m, ok := ctx.Value(metricsKey{}).(Metrics); ok {
+	if m, ok := ctx.Value(metricsKey{}).(Metrics); ok && m != nil {
 		return m
 	}
 
 	return &NullMetrics{}
+}
+
+// TryCtx is a variant of Ctx that does not return NullMetrics.
+//
+// Use this if you absolutely need an existing Metrics instance to exist.
+func TryCtx(ctx context.Context) (Metrics, bool) {
+	m, ok := ctx.Value(metricsKey{}).(Metrics)
+	return m, ok
 }
 
 // FormatDuration formats the duration in layout 12.345ms.
@@ -140,9 +149,10 @@ func FormatDuration(duration time.Duration) string {
 }
 
 // NewSimpleMetricsContext creates a SimpleMetrics instance attached to the returned context.
+//
 // Pass empty string for request Id to disable logging "requestId" property.
 // Pass 0 value for startTimeMilliEpoch to use time.Now as start time.
-func NewSimpleMetricsContext(ctx context.Context, requestId string, startTimeMilliEpoch int64) (context.Context, Metrics) {
+func NewSimpleMetricsContext(ctx context.Context, requestId string, startTimeMilliEpoch int64) Metrics {
 	var startTime time.Time
 	if startTimeMilliEpoch != 0 {
 		startTime = time.UnixMilli(startTimeMilliEpoch)
@@ -167,5 +177,5 @@ func NewSimpleMetricsContext(ctx context.Context, requestId string, startTimeMil
 		m.SetProperty("lambdaRequestId", lc.AwsRequestID)
 	}
 
-	return m.WithContext(ctx), m
+	return m
 }

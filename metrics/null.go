@@ -78,6 +78,10 @@ func (m *NullMetrics) SetStatusCodeWithFlag(int, int) Metrics {
 	return m
 }
 
+func (m *NullMetrics) Logger() *zerolog.Logger {
+	return nil
+}
+
 func (m *NullMetrics) Log() {
 	logger := zerolog.New(os.Stderr)
 	logger.Log().Int("nullMetrics", 1).Send()
