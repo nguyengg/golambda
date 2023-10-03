@@ -18,7 +18,7 @@ import (
 type Handler func(ctx context.Context, request events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error)
 
 // StreamingHandler for requests to Lambda Function URLs in RESPONSE_STREAM invoke mode.
-type StreamingHandler func(ctx context.Context, request events.LambdaFunctionURLRequest) (events.LambdaFunctionURLStreamingResponse, error)
+type StreamingHandler func(ctx context.Context, request events.LambdaFunctionURLRequest) (*events.LambdaFunctionURLStreamingResponse, error)
 
 // Start starts the Lambda runtime loop with the specified Handler.
 func Start(handler Handler, options ...start.Option) {
@@ -83,7 +83,7 @@ func Start(handler Handler, options ...start.Option) {
 func StartStreaming(handler StreamingHandler, options ...start.Option) {
 	opts := start.New(options)
 
-	lambda.StartHandlerFunc(func(ctx context.Context, request events.LambdaFunctionURLRequest) (response events.LambdaFunctionURLStreamingResponse, err error) {
+	lambda.StartHandlerFunc(func(ctx context.Context, request events.LambdaFunctionURLRequest) (response *events.LambdaFunctionURLStreamingResponse, err error) {
 		ctx, m := metrics.NewSimpleMetricsContext(
 			opts.LoggerProvider(ctx).WithContext(ctx),
 			request.RequestContext.RequestID,
@@ -153,12 +153,12 @@ func StartWrapper(handler func(Context) error, options ...start.Option) {
 
 // StartStreamingWrapper starts the Lambda runtime loop with the abstract handler.
 func StartStreamingWrapper(handler func(Context) error, options ...start.Option) {
-	StartStreaming(func(ctx context.Context, req events.LambdaFunctionURLRequest) (response events.LambdaFunctionURLStreamingResponse, err error) {
-		response = events.LambdaFunctionURLStreamingResponse{
+	StartStreaming(func(ctx context.Context, req events.LambdaFunctionURLRequest) (response *events.LambdaFunctionURLStreamingResponse, err error) {
+		response = &events.LambdaFunctionURLStreamingResponse{
 			Headers: map[string]string{},
 			Cookies: make([]string, 0),
 		}
-		c := newContext[events.LambdaFunctionURLStreamingResponse](ctx, &req, streaming.Wrap(&response))
+		c := newContext[events.LambdaFunctionURLStreamingResponse](ctx, &req, streaming.Wrap(response))
 		err = handler(c)
 		return
 	}, options...)
