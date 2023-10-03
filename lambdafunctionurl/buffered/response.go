@@ -47,13 +47,13 @@ func (r *Response) SetCookie(c http.Cookie) error {
 	return nil
 }
 
-func (r *Response) RespondJSON(v interface{}) error {
+func (r *Response) RespondJSON(v interface{}) (int, error) {
 	data, err := json.Marshal(v)
 	if err == nil {
 		r.response.Body = string(data)
 	}
 
-	return err
+	return len(data), err
 }
 
 func (r *Response) RespondText(body string) error {

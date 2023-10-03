@@ -91,9 +91,9 @@ type Context interface {
 	SetResponseCachingHeaders(v interface{}) (set bool)
 	// RespondOKWithJSON sets the response body to the JSON-encoded content of the argument v.
 	//
-	// Upon successfully setting the new response body, the status code is set to http.StatusOK and header "Content-Type" to
-	// "application/json; charset=utf-8". If the value implements HasETag and/or HasLastModified, their value are added to
-	// the response headers as well.
+	// Upon successfully setting the new response body, the status code is set to http.StatusOK, "Content-Type" header
+	// to "application/json; charset=utf-8", and "Content-Length" header to the number of bytes of the JSON content. If
+	// the value implements HasETag and/or HasLastModified, their value are added to the response headers as well.
 	//
 	// Use this method if you want to return a generic JSON result with 200 status code.
 	// Use RespondWithJSON if you need to customise the response further (set status code, headers, etc.).
@@ -105,8 +105,9 @@ type Context interface {
 	RespondWithJSON(v interface{}) (err error)
 	// RespondOKWithText sets the response body to the specified value.
 	//
-	// Upon successfully setting the new response body, the status code is set to http.StatusOK and header "Content-Type" to
-	// "text/plain; charset=utf-8".
+	// Upon successfully setting the new response body, the status code is set to http.StatusOK, "Content-Type" header
+	// to "text/plain; charset=utf-8", and "Content-Length" header to the length of the body which is the number of
+	// bytes, not the number of runes.
 	//
 	// Use this method if you want to return a generic plain-text result with 200 status code.
 	// Use RespondWithText if you need to customise the response further (set status code, headers, etc.).
@@ -118,8 +119,8 @@ type Context interface {
 	RespondWithText(body string) (err error)
 	// RespondOKWithBase64Data sets the response body to the base64 encoding of the given data.
 	//
-	// Upon successfully setting the new response body, the status code is set to http.StatusOK. You must still manually set
-	// "Content-Type" header.
+	// Upon successfully setting the new response body, the status code is set to http.StatusOK. You must still manually
+	// set "Content-Type" header.
 	RespondOKWithBase64Data(data []byte) (err error)
 	// RespondWithBase64Data is a variant of RespondOKWithBase64Data without effecting status code changes.
 	RespondWithBase64Data(data []byte) (err error)

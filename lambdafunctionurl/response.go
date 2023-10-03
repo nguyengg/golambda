@@ -5,6 +5,7 @@ import (
 	"github.com/nguyengg/golambda/lambdafunctionurl/cachecontrol"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 // Response is a wrapper around a specific Lambda response type (events.LambdaFunctionURLResponse or
@@ -26,7 +27,7 @@ type Response[T any] interface {
 	SetCookie(http.Cookie) error
 
 	// RespondJSON sets the response body to the JSON-encoded content of the argument v.
-	RespondJSON(v interface{}) error
+	RespondJSON(v interface{}) (int, error)
 	// RespondText sets the response body to the specified value.
 	RespondText(body string) error
 	// RespondBase64Data creates a response containing base64-encoded data.
@@ -71,10 +72,12 @@ func (c *baseContext[T]) SetResponseCachingHeaders(v interface{}) (set bool) {
 	return
 }
 
-func (c *baseContext[T]) RespondOKWithJSON(v interface{}) (err error) {
-	if err = c.response.RespondJSON(v); err == nil {
+func (c *baseContext[T]) RespondOKWithJSON(v interface{}) error {
+	n, err := c.response.RespondJSON(v)
+	if err == nil {
 		c.SetStatusCode(http.StatusOK)
 		c.SetResponseHeader("Content-Type", "application/json; charset=utf-8")
+		c.SetResponseHeader("Content-Length", strconv.FormatInt(int64(n), 10))
 
 		switch i := v.(type) {
 		case HasETag:
@@ -87,17 +90,19 @@ func (c *baseContext[T]) RespondOKWithJSON(v interface{}) (err error) {
 		}
 	}
 
-	return
+	return err
 }
 
 func (c *baseContext[T]) RespondWithJSON(v interface{}) (err error) {
-	return c.response.RespondJSON(v)
+	_, err = c.response.RespondJSON(v)
+	return
 }
 
 func (c *baseContext[T]) RespondOKWithText(body string) (err error) {
 	if err = c.response.RespondText(body); err == nil {
 		c.SetStatusCode(http.StatusOK)
 		c.SetResponseHeader("Content-Type", "text/plain; charset=utf-8")
+		c.SetResponseHeader("Content-Length", strconv.FormatInt(int64(len(body)), 10))
 	}
 
 	return
@@ -148,7 +153,7 @@ func (c *baseContext[T]) RespondFormatted(statusCode int, layout string, v ...in
 		return
 	}
 
-	if err = c.response.RespondJSON(struct {
+	if _, err = c.response.RespondJSON(struct {
 		Status  int    `json:"status"`
 		Message string `json:"message,omitempty"`
 	}{
