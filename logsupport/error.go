@@ -7,7 +7,9 @@ import (
 )
 
 // LogSmithyError checks that the given error is of type smithy.OperationError and/or smithy.APIError and logs the fields.
-// Returns in this order: service, operation, code, message, and fault. See ParseSmithyError.
+//
+// Returns in this order: service, operation, code, message, and fault.
+// See smithyerrors.Parse if you only need to parse the error without any logging.
 func LogSmithyError(err error) (service, operation, code, message string, fault smithy.ErrorFault) {
 	return LogSmithyErrorWithLogger(err, log.Default())
 }
@@ -57,24 +59,5 @@ func LogSmithyErrorWithLogger(err error, logger *log.Logger) (service, operation
 	}
 
 	logger.Printf("ERROR unknown error: %#v\n", err)
-	return
-}
-
-// ParseSmithyError uses errors.As to check if the given error is a smithy.APIError and/or smithy.OperationError.
-// service and operation return values come from smithy.OperationError, while the rest come from smithy.APIError.
-func ParseSmithyError(err error) (service, operation, code, message string, fault smithy.ErrorFault) {
-	var ae smithy.APIError
-	if errors.As(err, &ae) {
-		code = ae.ErrorCode()
-		message = ae.ErrorMessage()
-		fault = ae.ErrorFault()
-	}
-
-	var oe *smithy.OperationError
-	if errors.As(err, &oe) {
-		service = oe.Service()
-		operation = oe.Operation()
-	}
-
 	return
 }
