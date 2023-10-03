@@ -1,0 +1,13 @@
+all: fmt vet build test
+
+fmt:
+	go fmt ./...
+
+vet:
+	go vet ./...
+
+build:
+	go build ./...
+
+test:
+	go test ./...
