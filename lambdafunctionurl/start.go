@@ -104,6 +104,11 @@ func StartStreaming(handler StreamingHandler, options ...start.Option) {
 
 		if !opts.DisableResponseDebugLogging && configsupport.IsDebug() {
 			defer func() {
+				if response == nil {
+					log.Printf("WARN no response\n")
+					return
+				}
+
 				data, err := json.Marshal(response)
 				if err != nil {
 					log.Printf("ERROR marshal response: %v\n", err)
@@ -121,6 +126,11 @@ func StartStreaming(handler StreamingHandler, options ...start.Option) {
 				SetProperty("method", request.RequestContext.HTTP.Method)
 
 			defer func() {
+				if response == nil {
+					log.Printf("WARN no response\n")
+					return
+				}
+
 				if panicked {
 					m.Panicked()
 				}
