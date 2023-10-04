@@ -39,6 +39,9 @@ func AddToHeadObject(input *s3.HeadObjectInput, header http.Header) *s3.HeadObje
 
 // HeadersFromGetObjectOutput parses response headers from the [s3.GetObjectOutput] and passes it to the callback.
 func HeadersFromGetObjectOutput(output *s3.GetObjectOutput, cb func(k, v string)) {
+	if output.CacheControl != nil {
+		cb("Cache-Control", *output.CacheControl)
+	}
 	if output.ContentDisposition != nil {
 		cb("Content-Disposition", *output.ContentDisposition)
 	}
@@ -70,6 +73,9 @@ func HeadersFromGetObjectOutput(output *s3.GetObjectOutput, cb func(k, v string)
 
 // HeadersFromHeadObjectOutput parses response headers from the [s3.HeadObjectOutput] and passes it to the callback.
 func HeadersFromHeadObjectOutput(output *s3.HeadObjectOutput, cb func(k, v string)) {
+	if output.CacheControl != nil {
+		cb("Cache-Control", *output.CacheControl)
+	}
 	if output.ContentDisposition != nil {
 		cb("Content-Disposition", *output.ContentDisposition)
 	}
@@ -82,6 +88,9 @@ func HeadersFromHeadObjectOutput(output *s3.HeadObjectOutput, cb func(k, v strin
 	if output.ContentLength != 0 {
 		cb("Content-Length", strconv.FormatInt(output.ContentLength, 10))
 	}
+	//if output.ContentRange != nil {
+	//	cb("Content-Range", *output.ContentRange)
+	//}
 	if output.ContentType != nil {
 		cb("Content-Type", *output.ContentType)
 	}
