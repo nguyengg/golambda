@@ -44,11 +44,15 @@ func ParseDay(value string) (Day, error) {
 
 // ToTime returns a copy of the underlying time.Time instance.
 func (d *Day) ToTime() time.Time {
+	if d == nil {
+		return time.Time{}
+	}
+
 	return d.v
 }
 
 // String implements the fmt.Stringer interface.
-func (d *Day) String() string {
+func (d Day) String() string {
 	return d.Format(DayLayout)
 }
 
@@ -108,36 +112,41 @@ func (d *Day) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
 }
 
 // ToAttributeValueMap is convenient method to implement [.model.HasCreatedDay] or [.model.HasModifiedDay].
-func (d *Day) ToAttributeValueMap(key string) map[string]types.AttributeValue {
+func (d Day) ToAttributeValueMap(key string) map[string]types.AttributeValue {
 	return map[string]types.AttributeValue{key: &types.AttributeValueMemberS{Value: d.String()}}
 }
 
 // After is convenient method to [time.Time.After].
-func (d *Day) After(other Day) bool {
+func (d Day) After(other Day) bool {
 	return d.v.After(other.v)
 }
 
 // Before is convenient method to [time.Time.Before].
-func (d *Day) Before(other Day) bool {
+func (d Day) Before(other Day) bool {
 	return d.v.Before(other.v)
 }
 
 // Equal is convenient method to [time.Time.Equal].
-func (d *Day) Equal(other Day) bool {
+func (d Day) Equal(other Day) bool {
 	return d.v.Equal(other.v)
 }
 
+// Compare is convenient method to [time.Time.Compare].
+func (d Day) Compare(other Day) int {
+	return d.v.Compare(other.v)
+}
+
 // Format is convenient method to [time.Time.Format].
-func (d *Day) Format(layout string) string {
+func (d Day) Format(layout string) string {
 	return d.v.Format(layout)
 }
 
 // IsZero is convenient method to [time.Time.IsZero].
-func (d *Day) IsZero() bool {
+func (d Day) IsZero() bool {
 	return d.v.IsZero()
 }
 
 // In is convenient method to [time.Time.In].
-func (d *Day) In(loc *time.Location) Day {
+func (d Day) In(loc *time.Location) Day {
 	return Day{v: d.v.In(loc)}
 }

@@ -46,11 +46,15 @@ type EpochMillisecond time.Time
 
 // ToTime returns the underlying time.Time instance.
 func (e *EpochMillisecond) ToTime() time.Time {
+	if e == nil {
+		return time.Time{}
+	}
+
 	return time.Time(*e)
 }
 
 // String implements the fmt.Stringer interface.
-func (e *EpochMillisecond) String() string {
+func (e EpochMillisecond) String() string {
 	return strconv.FormatInt(e.ToTime().UnixMilli(), 10)
 }
 
@@ -111,31 +115,36 @@ func (e *EpochMillisecond) UnmarshalDynamoDBAttributeValue(av types.AttributeVal
 }
 
 // ToAttributeValueMap is convenient method to implement [.model.HasCreatedTimestamp] or [.model.HasModifiedTimestamp].
-func (e *EpochMillisecond) ToAttributeValueMap(key string) map[string]types.AttributeValue {
+func (e EpochMillisecond) ToAttributeValueMap(key string) map[string]types.AttributeValue {
 	return map[string]types.AttributeValue{key: &types.AttributeValueMemberN{Value: e.String()}}
 }
 
 // After is convenient method to [time.Time.After].
-func (e *EpochMillisecond) After(other EpochMillisecond) bool {
-	return time.Time(*e).After(other.ToTime())
+func (e EpochMillisecond) After(other EpochMillisecond) bool {
+	return time.Time(e).After(other.ToTime())
 }
 
 // Before is convenient method to [time.Time.Before].
-func (e *EpochMillisecond) Before(other EpochMillisecond) bool {
-	return time.Time(*e).Before(other.ToTime())
+func (e EpochMillisecond) Before(other EpochMillisecond) bool {
+	return time.Time(e).Before(other.ToTime())
 }
 
 // Equal is convenient method to [time.Time.Equal].
-func (e *EpochMillisecond) Equal(other EpochMillisecond) bool {
-	return time.Time(*e).Equal(other.ToTime())
+func (e EpochMillisecond) Equal(other EpochMillisecond) bool {
+	return time.Time(e).Equal(other.ToTime())
+}
+
+// Compare is convenient method to [time.Time.Compare].
+func (e EpochMillisecond) Compare(other EpochMillisecond) int {
+	return time.Time(e).Compare(other.ToTime())
 }
 
 // Format is convenient method to [time.Time.Format].
-func (e *EpochMillisecond) Format(layout string) string {
-	return time.Time(*e).Format(layout)
+func (e EpochMillisecond) Format(layout string) string {
+	return time.Time(e).Format(layout)
 }
 
 // IsZero is convenient method to [time.Time.IsZero].
-func (e *EpochMillisecond) IsZero() bool {
-	return time.Time(*e).IsZero()
+func (e EpochMillisecond) IsZero() bool {
+	return time.Time(e).IsZero()
 }

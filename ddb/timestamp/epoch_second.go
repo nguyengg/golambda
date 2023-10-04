@@ -52,7 +52,7 @@ func (e *EpochSecond) ToTime() time.Time {
 }
 
 // String implements the fmt.Stringer interface.
-func (e *EpochSecond) String() string {
+func (e EpochSecond) String() string {
 	return strconv.FormatInt(e.ToTime().Unix(), 10)
 }
 
@@ -112,31 +112,36 @@ func (e *EpochSecond) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) e
 }
 
 // ToAttributeValueMap is convenient method to implement [.model.HasCreatedTimestamp] or [.model.HasModifiedTimestamp].
-func (e *EpochSecond) ToAttributeValueMap(key string) map[string]types.AttributeValue {
+func (e EpochSecond) ToAttributeValueMap(key string) map[string]types.AttributeValue {
 	return map[string]types.AttributeValue{key: &types.AttributeValueMemberN{Value: e.String()}}
 }
 
 // After is convenient method to [time.Time.After].
-func (e *EpochSecond) After(other EpochSecond) bool {
-	return time.Time(*e).After(other.ToTime())
+func (e EpochSecond) After(other EpochSecond) bool {
+	return time.Time(e).After(other.ToTime())
 }
 
 // Before is convenient method to [time.Time.Before].
-func (e *EpochSecond) Before(other EpochSecond) bool {
-	return time.Time(*e).Before(other.ToTime())
+func (e EpochSecond) Before(other EpochSecond) bool {
+	return time.Time(e).Before(other.ToTime())
 }
 
 // Equal is convenient method to [time.Time.Equal].
-func (e *EpochSecond) Equal(other EpochSecond) bool {
-	return time.Time(*e).Equal(other.ToTime())
+func (e EpochSecond) Equal(other EpochSecond) bool {
+	return time.Time(e).Equal(other.ToTime())
+}
+
+// Compare is convenient method to [time.Time.Compare].
+func (e EpochSecond) Compare(other EpochSecond) int {
+	return time.Time(e).Compare(other.ToTime())
 }
 
 // Format is convenient method to [time.Time.Format].
-func (e *EpochSecond) Format(layout string) string {
-	return time.Time(*e).Format(layout)
+func (e EpochSecond) Format(layout string) string {
+	return time.Time(e).Format(layout)
 }
 
 // IsZero is convenient method to [time.Time.IsZero].
-func (e *EpochSecond) IsZero() bool {
-	return time.Time(*e).IsZero()
+func (e EpochSecond) IsZero() bool {
+	return time.Time(e).IsZero()
 }

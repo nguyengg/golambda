@@ -58,13 +58,13 @@ func ParseTimestamp(value string) (Timestamp, error) {
 }
 
 // ToTime returns the underlying time.Time instance.
-func (ts *Timestamp) ToTime() time.Time {
-	return time.Time(*ts)
+func (t *Timestamp) ToTime() time.Time {
+	return time.Time(*t)
 }
 
 // String implements the fmt.Stringer interface.
-func (ts *Timestamp) String() string {
-	return ts.Format(FractionalSecondLayout)
+func (t Timestamp) String() string {
+	return t.Format(FractionalSecondLayout)
 }
 
 var _ json.Marshaler = &Timestamp{}
@@ -77,32 +77,32 @@ var _ attributevalue.Unmarshaler = &Timestamp{}
 var _ attributevalue.Unmarshaler = (*Timestamp)(nil)
 
 // MarshalJSON must not use receiver pointer to allow both pointer and non-pointer usage.
-func (ts Timestamp) MarshalJSON() ([]byte, error) {
-	data, err := json.Marshal(ts.Format(FractionalSecondLayout))
+func (t Timestamp) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(t.Format(FractionalSecondLayout))
 	if err != nil {
 		panic(err)
 	}
 	return data, nil
 }
 
-func (ts *Timestamp) UnmarshalJSON(data []byte) error {
+func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {
 		return fmt.Errorf("not a string: %w", err)
-	} else if t, err := time.Parse(FractionalSecondLayout, value); err != nil {
+	} else if v, err := time.Parse(FractionalSecondLayout, value); err != nil {
 		return fmt.Errorf("not a string in %s format: %w", FractionalSecondLayout, err)
 	} else {
-		*ts = Timestamp(t)
+		*t = Timestamp(v)
 	}
 	return nil
 }
 
 // MarshalDynamoDBAttributeValue must not use receiver pointer to allow both pointer and non-pointer usage.
-func (ts Timestamp) MarshalDynamoDBAttributeValue() (types.AttributeValue, error) {
-	return &types.AttributeValueMemberS{Value: ts.String()}, nil
+func (t Timestamp) MarshalDynamoDBAttributeValue() (types.AttributeValue, error) {
+	return &types.AttributeValueMemberS{Value: t.String()}, nil
 }
 
-func (ts *Timestamp) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
+func (t *Timestamp) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
 	avS, ok := av.(*types.AttributeValueMemberS)
 	if !ok {
 		return nil
@@ -113,41 +113,46 @@ func (ts *Timestamp) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) er
 		return nil
 	}
 
-	t, err := time.Parse(FractionalSecondLayout, s)
+	v, err := time.Parse(FractionalSecondLayout, s)
 	if err != nil {
 		return fmt.Errorf("not a string in %s format: %w", FractionalSecondLayout, err)
 	}
 
-	*ts = Timestamp(t)
+	*t = Timestamp(v)
 	return nil
 }
 
 // ToAttributeValueMap is convenient method to implement [.model.HasCreatedTimestamp] or [.model.HasModifiedTimestamp].
-func (ts *Timestamp) ToAttributeValueMap(key string) map[string]types.AttributeValue {
-	return map[string]types.AttributeValue{key: &types.AttributeValueMemberS{Value: ts.String()}}
+func (t Timestamp) ToAttributeValueMap(key string) map[string]types.AttributeValue {
+	return map[string]types.AttributeValue{key: &types.AttributeValueMemberS{Value: t.String()}}
 }
 
 // After is convenient method to [time.Time.After].
-func (ts *Timestamp) After(other Timestamp) bool {
-	return time.Time(*ts).After(other.ToTime())
+func (t Timestamp) After(other Timestamp) bool {
+	return time.Time(t).After(other.ToTime())
 }
 
 // Before is convenient method to [time.Time.Before].
-func (ts *Timestamp) Before(other Timestamp) bool {
-	return time.Time(*ts).Before(other.ToTime())
+func (t Timestamp) Before(other Timestamp) bool {
+	return time.Time(t).Before(other.ToTime())
 }
 
 // Equal is convenient method to [time.Time.Equal].
-func (ts *Timestamp) Equal(other Timestamp) bool {
-	return time.Time(*ts).Equal(other.ToTime())
+func (t Timestamp) Equal(other Timestamp) bool {
+	return time.Time(t).Equal(other.ToTime())
+}
+
+// Compare is convenient method to [time.Time.Compare].
+func (t Timestamp) Compare(other Timestamp) int {
+	return time.Time(t).Compare(other.ToTime())
 }
 
 // Format is convenient method to [time.Time.Format].
-func (ts *Timestamp) Format(layout string) string {
-	return time.Time(*ts).Format(layout)
+func (t Timestamp) Format(layout string) string {
+	return time.Time(t).Format(layout)
 }
 
 // IsZero is convenient method to [time.Time.IsZero].
-func (ts *Timestamp) IsZero() bool {
-	return time.Time(*ts).IsZero()
+func (t Timestamp) IsZero() bool {
+	return time.Time(t).IsZero()
 }
