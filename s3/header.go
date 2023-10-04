@@ -64,7 +64,7 @@ func HeadersFromGetObjectOutput(output *s3.GetObjectOutput, cb func(k, v string)
 		cb("Expires", output.Expires.Format(http.TimeFormat))
 	}
 	if output.LastModified != nil {
-		cb("Last-Modified", output.Expires.Format(http.TimeFormat))
+		cb("Last-Modified", output.LastModified.Format(http.TimeFormat))
 	}
 }
 
@@ -92,7 +92,7 @@ func HeadersFromHeadObjectOutput(output *s3.HeadObjectOutput, cb func(k, v strin
 		cb("Expires", output.Expires.Format(http.TimeFormat))
 	}
 	if output.LastModified != nil {
-		cb("Last-Modified", output.Expires.Format(http.TimeFormat))
+		cb("Last-Modified", output.LastModified.Format(http.TimeFormat))
 	}
 }
 
