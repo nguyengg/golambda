@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/nguyengg/golambda/lambdafunctionurl/cachecontrol"
 	"github.com/nguyengg/golambda/lambdafunctionurl/etag"
 	"github.com/nguyengg/golambda/metrics"
@@ -181,15 +180,6 @@ type Context interface {
 	//
 	// If the request doesn't contain "If-Unmodified-Since" header, returns zero-value time.Time, nil.
 	ParseIfUnmodifiedSince() (time.Time, error)
-
-	// ProxyS3 will call S3 with the appropriate GET or HEAD method and return the response as either plain text or
-	// base64-encoded data.
-	//
-	// Only GET and HEAD are supported. If the method is not recognized, RespondMethodNotAllowed is used.
-	ProxyS3(client *s3.Client, bucket, key string) error
-	// ProxyS3WithRequestHeaders is a variant of ProxyS3 that is given an extra http.Header whose values will be passed
-	// into the S3's respective requests if the action supports it.
-	ProxyS3WithRequestHeaders(client *s3.Client, bucket, key string, header http.Header) error
 }
 
 // DisallowUnknownFields is to be used with UnmarshalRequestBodyWithOpts to disallow unknown fields in decoded JSON.
