@@ -43,11 +43,7 @@ func ParseDay(value string) (Day, error) {
 }
 
 // ToTime returns a copy of the underlying time.Time instance.
-func (d *Day) ToTime() time.Time {
-	if d == nil {
-		return time.Time{}
-	}
-
+func (d Day) ToTime() time.Time {
 	return d.v
 }
 
