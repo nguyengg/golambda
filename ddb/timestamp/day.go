@@ -27,7 +27,7 @@ func TruncateToStartOfDay(t time.Time) Day {
 
 // TodayInLocation creates a new Day with the specified location.
 func TodayInLocation(loc *time.Location) Day {
-	return TruncateToStartOfDay(time.Now())
+	return TruncateToStartOfDay(time.Now().In(loc))
 }
 
 // ParseDay creates an instance of Day from parsing the specified string.
