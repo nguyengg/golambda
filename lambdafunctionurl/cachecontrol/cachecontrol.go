@@ -61,7 +61,7 @@ func Join(directives ...ResponseDirective) string {
 	}
 }
 
-// Creates a key-value pair where value is the second part of the given duration.
+// Creates a "key=value" pair where value is the second part of the given duration.
 func duration(key string, duration time.Duration) string {
-	return key + strconv.FormatInt(int64(duration/time.Second), 10)
+	return key + "=" + strconv.FormatInt(int64(duration/time.Second), 10)
 }
