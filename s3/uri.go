@@ -17,11 +17,11 @@ type URIWithOwner struct {
 
 var uriWithOwnerPattern = regexp.MustCompile(`s3://([a-z0-9][a-z0-9.-]+?)\[(\d+)](/(.*))?`)
 
-// ParseURIWithOwner parses a URL in expected format s3://bucket[owner]/key.
+// Parse parses a URL in expected format s3://bucket[owner]/key.
 //
 // Only the bucket name and expected bucket owner is required. The key can be empty, or can be a prefix that possibly
 // ends in "/".
-func ParseURIWithOwner(rawURL string) (value URIWithOwner, err error) {
+func Parse(rawURL string) (value URIWithOwner, err error) {
 	if !strings.HasPrefix(rawURL, "s3://") {
 		err = fmt.Errorf("URL does not start with s3://")
 		return

@@ -65,13 +65,13 @@ func TestParseS3URIWithOwner(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotValue, err := ParseURIWithOwner(tt.args.rawURL)
+			gotValue, err := Parse(tt.args.rawURL)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseURIWithOwner() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotValue, tt.wantValue) {
-				t.Errorf("ParseURIWithOwner() gotValue = %v, want %v", gotValue, tt.wantValue)
+				t.Errorf("Parse() gotValue = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
 	}
