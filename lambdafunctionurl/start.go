@@ -111,7 +111,16 @@ func StartStreaming(handler StreamingHandler, options ...start.Option) {
 					return
 				}
 
-				data, err := json.Marshal(response)
+				// the response's Body will most likely not be JSON-serialisable so leave it out.
+				data, err := json.Marshal(struct {
+					StatusCode int               `json:"statusCode"`
+					Headers    map[string]string `json:"headers"`
+					Cookies    []string          `json:"cookies"`
+				}{
+					StatusCode: response.StatusCode,
+					Headers:    response.Headers,
+					Cookies:    response.Cookies,
+				})
 				if err != nil {
 					log.Printf("ERROR marshal response: %v\n", err)
 				} else {
