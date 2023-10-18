@@ -35,7 +35,7 @@ func Wrap(client *dynamodb.Client) *Wrapper {
 func (w Wrapper) Save(ctx context.Context, item model.Item, options ...func(*save.Opts)) (*dynamodb.PutItemOutput, error) {
 	m, err := attributevalue.MarshalMap(item)
 	if err != nil {
-		return nil, fmt.Errorf("marshal map: %w", err)
+		return nil, fmt.Errorf("marshal map error: %w", err)
 	}
 
 	opts := &save.Opts{
@@ -62,7 +62,7 @@ func (w Wrapper) Save(ctx context.Context, item model.Item, options ...func(*sav
 
 			n, nav, ok := First(v.NextVersion())
 			if !ok {
-				return nil, fmt.Errorf("no new version attribute value")
+				return nil, fmt.Errorf("NextVersion returns empty map, you can disable Versioned logic with save.DisableOptimisticLocking")
 			}
 
 			if isNew {
@@ -81,7 +81,7 @@ func (w Wrapper) Save(ctx context.Context, item model.Item, options ...func(*sav
 		case model.HasCreatedTimestamp:
 			n, av, ok := First(v.UpdateCreatedTimestamp(now))
 			if !ok {
-				return nil, fmt.Errorf("no created timestamp attribute value")
+				return nil, fmt.Errorf("UpdateCreatedTimestamp returns empty map, you can disable HasCreatedTimestamp logic with save.DisableAutoGenerateTimestamps(timestampe.CreatedTimestamp)")
 			}
 
 			opts.Input.Item[n] = av
@@ -93,7 +93,7 @@ func (w Wrapper) Save(ctx context.Context, item model.Item, options ...func(*sav
 		case model.HasModifiedTimestamp:
 			n, av, ok := First(v.UpdateModifiedTimestamp(now))
 			if !ok {
-				return nil, fmt.Errorf("no modified timestamp attribute value")
+				return nil, fmt.Errorf("UpdateModifiedTimestamp returns empty map, you can disable HasModifiedTimestamp logic with save.DisableAutoGenerateTimestamps(timestampe.ModifiedTimestamp)")
 			}
 
 			opts.Input.Item[n] = av
@@ -103,7 +103,7 @@ func (w Wrapper) Save(ctx context.Context, item model.Item, options ...func(*sav
 	if opts.Condition != nil {
 		e, err := expression.NewBuilder().WithCondition(*opts.Condition).Build()
 		if err != nil {
-			return nil, fmt.Errorf("build condition expression: %w", err)
+			return nil, fmt.Errorf("build expressions error: %w", err)
 		}
 		opts.Input.ConditionExpression = e.Condition()
 		opts.Input.ExpressionAttributeNames = e.Names()
@@ -131,7 +131,7 @@ func (w Wrapper) Load(ctx context.Context, item model.Item, options ...func(opts
 	if opts.Projection != nil {
 		e, err := expression.NewBuilder().WithProjection(*opts.Projection).Build()
 		if err != nil {
-			return nil, fmt.Errorf("build projection expression: %w", err)
+			return nil, fmt.Errorf("build expressions error: %w", err)
 		}
 		opts.Input.ExpressionAttributeNames = e.Names()
 		opts.Input.ProjectionExpression = e.Projection()
@@ -143,7 +143,7 @@ func (w Wrapper) Load(ctx context.Context, item model.Item, options ...func(opts
 	}
 	if len(output.Item) != 0 {
 		if err = attributevalue.UnmarshalMap(output.Item, item); err != nil {
-			return nil, fmt.Errorf("unmarshal map: %w", err)
+			return nil, fmt.Errorf("unmarshal map error: %w", err)
 		}
 	}
 
@@ -168,20 +168,22 @@ func (w Wrapper) Delete(ctx context.Context, item model.Item, options ...func(*d
 		opt(opts)
 	}
 
-	switch v := item.(type) {
-	case model.Versioned:
-		n, av, ok := First(v.GetVersion())
-		if !ok {
-			return nil, fmt.Errorf("no version attribute value")
-		}
+	if !opts.DisableOptimisticLocking {
+		switch v := item.(type) {
+		case model.Versioned:
+			n, av, ok := First(v.GetVersion())
+			if !ok {
+				return nil, fmt.Errorf("GetVersion returns empty map, you can disable Versioned logic with delete.DisableOptimisticLocking")
+			}
 
-		opts.Condition = expr.And(opts.Condition, expression.Name(n).Equal(expression.Value(av)))
+			opts.Condition = expr.And(opts.Condition, expression.Name(n).Equal(expression.Value(av)))
+		}
 	}
 
 	if opts.Condition != nil {
 		e, err := expression.NewBuilder().WithCondition(*opts.Condition).Build()
 		if err != nil {
-			return nil, fmt.Errorf("build expression: %w", err)
+			return nil, fmt.Errorf("build expressions error: %w", err)
 		}
 		opts.Input.ConditionExpression = e.Condition()
 		opts.Input.ExpressionAttributeNames = e.Names()
@@ -229,7 +231,7 @@ func (w Wrapper) Update(ctx context.Context, item model.Item, required func(*upd
 
 			n, av, ok = First(v.NextVersion())
 			if !ok {
-				return nil, fmt.Errorf("no new version attribute value")
+				return nil, fmt.Errorf("NextVersion returns empty map, you can disable Versioned logic with update.DisableOptimisticLocking")
 			}
 
 			opts.Update = expr.Set(opts.Update, expression.Name(n), expression.Value(av))
@@ -243,7 +245,7 @@ func (w Wrapper) Update(ctx context.Context, item model.Item, required func(*upd
 		case model.HasCreatedTimestamp:
 			n, av, ok := First(v.UpdateCreatedTimestamp(now))
 			if !ok {
-				return nil, fmt.Errorf("no created timestamp attribute value")
+				return nil, fmt.Errorf("UpdateCreatedTimestamp returns empty map, you can disable HasCreatedTimestamp logic with update.DisableAutoGenerateTimestamps(timestampe.CreatedTimestamp)")
 			}
 
 			opts.Update = expr.Set(opts.Update, expression.Name(n), expression.Value(av))
@@ -255,7 +257,7 @@ func (w Wrapper) Update(ctx context.Context, item model.Item, required func(*upd
 		case model.HasModifiedTimestamp:
 			n, av, ok := First(v.UpdateModifiedTimestamp(now))
 			if !ok {
-				return nil, fmt.Errorf("no modified timestamp attribute value")
+				return nil, fmt.Errorf("UpdateModifiedTimestamp returns empty map, you can disable HasModifiedTimestamp logic with update.DisableAutoGenerateTimestamps(timestampe.ModifiedTimestamp)")
 			}
 
 			opts.Update = expr.Set(opts.Update, expression.Name(n), expression.Value(av))
@@ -276,7 +278,7 @@ func (w Wrapper) Update(ctx context.Context, item model.Item, required func(*upd
 	if hasExpressions {
 		e, err := builder.Build()
 		if err != nil {
-			return nil, fmt.Errorf("build expression: %w", err)
+			return nil, fmt.Errorf("build expressions error: %w", err)
 		}
 
 		opts.Input.ConditionExpression = e.Condition()
