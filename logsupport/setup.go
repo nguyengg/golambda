@@ -9,8 +9,11 @@ import (
 	"os"
 )
 
-// RecommendedLogFlag is the recommend flag to be set to log.SetFlags.
-const RecommendedLogFlag = log.Ldate | log.Lmicroseconds | log.LUTC | log.Lshortfile | log.Lmsgprefix
+// RecommendedDebugLogFlag is the flag passed to log.SetFlags by SetUpLogger if [configsupport.IsDebug] is true.
+const RecommendedDebugLogFlag = log.Ldate | log.Lmicroseconds | log.LUTC | log.Llongfile | log.Lmsgprefix
+
+// RecommendedLogFlag is the flag passed to log.SetFlags by SetUpLogger if [configsupport.IsDebug] is false.
+const RecommendedLogFlag = RecommendedDebugLogFlag | log.Lshortfile
 
 // SetUpGlobalLogger sets up log.Default with flags set to RecommendedLogFlag and prefix set to the AwsRequestID from
 // lambdacontext.FromContext.
@@ -31,7 +34,11 @@ func SetUpLogger(ctx context.Context, logger *log.Logger) func() {
 	flags := logger.Flags()
 	prefix := logger.Prefix()
 
-	logger.SetFlags(RecommendedLogFlag)
+	if configsupport.IsDebug() {
+		logger.SetFlags(RecommendedDebugLogFlag)
+	} else {
+		logger.SetFlags(RecommendedLogFlag)
+	}
 
 	if lc, ok := lambdacontext.FromContext(ctx); ok {
 		logger.SetPrefix(lc.AwsRequestID + " ")
