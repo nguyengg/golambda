@@ -51,7 +51,9 @@ func Join(directives ...ResponseDirective) string {
 	case 1:
 		return string(directives[0])
 	case 2:
-		return string(directives[0]) + ", " + string(directives[2])
+		return string(directives[0]) + ", " + string(directives[1])
+	case 3:
+		return string(directives[0]) + ", " + string(directives[1]) + ", " + string(directives[2])
 	default:
 		elems := make([]string, len(directives))
 		for i, d := range directives {
