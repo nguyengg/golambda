@@ -67,7 +67,11 @@ var _ attributevalue.Unmarshaler = (*EpochMillisecond)(nil)
 
 // MarshalJSON must not use receiver pointer to allow both pointer and non-pointer usage.
 func (e EpochSecond) MarshalJSON() ([]byte, error) {
-	return json.Marshal(e.ToTime().Unix())
+	data, err := json.Marshal(e.ToTime().Unix())
+	if err != nil {
+		return nil, fmt.Errorf("epoch second marshal JSON error: %w", err)
+	}
+	return data, nil
 }
 
 func (e *EpochSecond) UnmarshalJSON(data []byte) error {
@@ -75,11 +79,11 @@ func (e *EpochSecond) UnmarshalJSON(data []byte) error {
 	d := json.NewDecoder(bytes.NewReader(data))
 	d.UseNumber()
 	if err := d.Decode(&number); err != nil {
-		return fmt.Errorf("not a number: %w", err)
+		return fmt.Errorf("epoch second unmarshal JSON error: not a number: %w", err)
 	}
 	v, err := number.Int64()
 	if err != nil {
-		return fmt.Errorf("not an int64: %w", err)
+		return fmt.Errorf("epoch second unmarshal JSON error: not an int64: %w", err)
 	}
 
 	*e = EpochSecond(time.Unix(v, 0).UTC())
@@ -94,19 +98,18 @@ func (e EpochSecond) MarshalDynamoDBAttributeValue() (types.AttributeValue, erro
 func (e *EpochSecond) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
 	avN, ok := av.(*types.AttributeValueMemberN)
 	if !ok {
-		return nil
+		return fmt.Errorf("epoch second unmarshal DDB AV error: not type N")
 	}
 
 	n := avN.Value
 	if n == "" {
-		return nil
+		return fmt.Errorf("epoch second unmarshal DDB AV error: empty N value")
 	}
 
 	v, err := strconv.ParseInt(n, 10, 64)
 	if err != nil {
-		return fmt.Errorf("not an int64: %w", err)
+		return fmt.Errorf("epoch second unmarshal DDB AV error: not an int64: %w", err)
 	}
-
 	*e = EpochSecond(time.Unix(v, 0).UTC())
 	return nil
 }

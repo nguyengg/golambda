@@ -65,7 +65,7 @@ var _ attributevalue.Unmarshaler = (*Day)(nil)
 func (d Day) MarshalJSON() ([]byte, error) {
 	data, err := json.Marshal(d.Format(DayLayout))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("day marshal JSON error: %w", err)
 	}
 	return data, nil
 }
@@ -73,9 +73,9 @@ func (d Day) MarshalJSON() ([]byte, error) {
 func (d *Day) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {
-		return fmt.Errorf("not a string: %w", err)
+		return fmt.Errorf("day unmarshal JSON error: not a string: %w", err)
 	} else if t, err := time.Parse(DayLayout, value); err != nil {
-		return fmt.Errorf("not a string in %s format: %w", DayLayout, err)
+		return fmt.Errorf(`day unmarshal JSON error: not a string in time layout "%s": %w`, DayLayout, err)
 	} else {
 		*d = Day{v: t}
 	}
@@ -90,17 +90,17 @@ func (d Day) MarshalDynamoDBAttributeValue() (types.AttributeValue, error) {
 func (d *Day) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
 	avS, ok := av.(*types.AttributeValueMemberS)
 	if !ok {
-		return nil
+		return fmt.Errorf("day unmarshal DDB AV error: not type S")
 	}
 
 	s := avS.Value
 	if s == "" {
-		return nil
+		return fmt.Errorf("day unmarshal DDB AV error: empty S string")
 	}
 
 	t, err := time.Parse(DayLayout, s)
 	if err != nil {
-		return fmt.Errorf("not a string in %s format: %w", DayLayout, err)
+		return fmt.Errorf(`day unmarshal DDB AV error: not a string in time layout "%s": %w`, DayLayout, err)
 	}
 
 	*d = Day{v: t}

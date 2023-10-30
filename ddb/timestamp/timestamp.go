@@ -80,7 +80,7 @@ var _ attributevalue.Unmarshaler = (*Timestamp)(nil)
 func (t Timestamp) MarshalJSON() ([]byte, error) {
 	data, err := json.Marshal(t.Format(FractionalSecondLayout))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("timestamp marshal JSON error: %w", err)
 	}
 	return data, nil
 }
@@ -88,9 +88,9 @@ func (t Timestamp) MarshalJSON() ([]byte, error) {
 func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	var value string
 	if err := json.Unmarshal(data, &value); err != nil {
-		return fmt.Errorf("not a string: %w", err)
+		return fmt.Errorf("timestamp unmarshal JSON error: not a string: %w", err)
 	} else if v, err := time.Parse(FractionalSecondLayout, value); err != nil {
-		return fmt.Errorf("not a string in %s format: %w", FractionalSecondLayout, err)
+		return fmt.Errorf(`timestamp unmarshal JSON error: not a string in time layout "%s": %w`, FractionalSecondLayout, err)
 	} else {
 		*t = Timestamp(v)
 	}
@@ -105,17 +105,17 @@ func (t Timestamp) MarshalDynamoDBAttributeValue() (types.AttributeValue, error)
 func (t *Timestamp) UnmarshalDynamoDBAttributeValue(av types.AttributeValue) error {
 	avS, ok := av.(*types.AttributeValueMemberS)
 	if !ok {
-		return nil
+		return fmt.Errorf("timestamp unmarshal DDB AV error: not type S")
 	}
 
 	s := avS.Value
 	if s == "" {
-		return nil
+		return fmt.Errorf("timestamp unmarshal DDB AV error: empty S value")
 	}
 
 	v, err := time.Parse(FractionalSecondLayout, s)
 	if err != nil {
-		return fmt.Errorf("not a string in %s format: %w", FractionalSecondLayout, err)
+		return fmt.Errorf(`timestamp unmarshal DDB AV error: not a string in time layout "%s": %w`, FractionalSecondLayout, err)
 	}
 
 	*t = Timestamp(v)
