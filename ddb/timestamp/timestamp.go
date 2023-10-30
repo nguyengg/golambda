@@ -80,7 +80,7 @@ var _ attributevalue.Unmarshaler = (*Timestamp)(nil)
 func (t Timestamp) MarshalJSON() ([]byte, error) {
 	data, err := json.Marshal(t.Format(FractionalSecondLayout))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return data, nil
 }

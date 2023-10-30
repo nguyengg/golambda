@@ -65,7 +65,7 @@ var _ attributevalue.Unmarshaler = (*Day)(nil)
 func (d Day) MarshalJSON() ([]byte, error) {
 	data, err := json.Marshal(d.Format(DayLayout))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return data, nil
 }
