@@ -51,8 +51,8 @@ func HeadersFromGetObjectOutput(output *s3.GetObjectOutput, cb func(k, v string)
 	if output.ContentLanguage != nil {
 		cb("Content-Language", *output.ContentLanguage)
 	}
-	if output.ContentLength != 0 {
-		cb("Content-Length", strconv.FormatInt(output.ContentLength, 10))
+	if output.ContentLength != nil {
+		cb("Content-Length", strconv.FormatInt(*output.ContentLength, 10))
 	}
 	if output.ContentRange != nil {
 		cb("Content-Range", *output.ContentRange)
@@ -85,8 +85,8 @@ func HeadersFromHeadObjectOutput(output *s3.HeadObjectOutput, cb func(k, v strin
 	if output.ContentLanguage != nil {
 		cb("Content-Language", *output.ContentLanguage)
 	}
-	if output.ContentLength != 0 {
-		cb("Content-Length", strconv.FormatInt(output.ContentLength, 10))
+	if output.ContentLength != nil {
+		cb("Content-Length", strconv.FormatInt(*output.ContentLength, 10))
 	}
 	//if output.ContentRange != nil {
 	//	cb("Content-Range", *output.ContentRange)
