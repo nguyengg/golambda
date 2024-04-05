@@ -136,7 +136,7 @@ func Delete(name string, value interface{}) func(*Opts) {
 }
 
 // Remove is a helper method to expr.Remove to add a REMOVE action.
-func (opts *Opts) Remove(name string, value interface{}) *Opts {
+func (opts *Opts) Remove(name string) *Opts {
 	opts.Update = expr.Remove(opts.Update, expression.Name(name))
 	return opts
 }
@@ -144,9 +144,9 @@ func (opts *Opts) Remove(name string, value interface{}) *Opts {
 // Remove is the global variant of Opts.Remove.
 //
 // This is useful if you only have one or two actions in the update expression and don't need chaining.
-func Remove(name string, value interface{}) func(*Opts) {
+func Remove(name string) func(*Opts) {
 	return func(opts *Opts) {
-		opts.Remove(name, value)
+		opts.Remove(name)
 	}
 }
 
