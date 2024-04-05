@@ -90,6 +90,33 @@ func SetOrRemove(set, remove bool, name string, value interface{}) func(*Opts) {
 	}
 }
 
+// SetOrRemoveStringPointer is a specialization of SetOrRemove for string pointer value.
+//
+// If ptr is a nil pointer, no action is taken. If ptr dereferences to an empty string, a REMOVE action is used.
+// A non-empty string otherwise will result in a SET action.
+func (opts *Opts) SetOrRemoveStringPointer(name string, ptr *string) *Opts {
+	if ptr == nil {
+		return opts
+	}
+
+	if v := *ptr; v != "" {
+		opts.Update = expr.Set(opts.Update, expression.Name(name), expression.Value(v))
+		return opts
+	}
+
+	opts.Update = expr.Remove(opts.Update, expression.Name(name))
+	return opts
+}
+
+// SetOrRemoveStringPointer is the global variant of Opts.SetOrRemoveStringPointer.
+//
+// This is useful if you only have one or two actions in the update expression and don't need chaining.
+func SetOrRemoveStringPointer(name string, ptr *string) func(*Opts) {
+	return func(opts *Opts) {
+		opts.SetOrRemoveStringPointer(name, ptr)
+	}
+}
+
 // Add is a helper method to expr.Add to add an ADD action.
 func (opts *Opts) Add(name string, value interface{}) *Opts {
 	opts.Update = expr.Add(opts.Update, expression.Name(name), expression.Value(value))
