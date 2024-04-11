@@ -16,7 +16,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog='build.py',
         description='Build a Lambda Go handler and optionally update the associated function.',
-        epilog="""The script can be updated with `curl --proto '=https' -fo start.go https://raw.githubusercontent.com/nguyengg/golambda/main/build.py`""")
+        epilog="""The script can be updated with `curl --proto '=https' -fo build.py https://raw.githubusercontent.com/nguyengg/golambda/main/build.py`""")
     parser.add_argument('-b', '--build', action='store_true',
                         help='If -b is given, `go build` is always executed. If -b is give but not -u, stop after '
                              'build. If neither -b nor -u are given then both actions take place in sequence (implicit '

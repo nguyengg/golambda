@@ -19,6 +19,10 @@ and suggestions.
 
 # Getting Started
 The root module exposes a generic wrapper that attaches a metrics instance to the context:
+```shell
+# Download build.py to make it easier to build and update Lambda functions.
+curl --proto '=https' -fo build.py https://raw.githubusercontent.com/nguyengg/golambda/main/build.py
+```
 
 ```go
 package main
