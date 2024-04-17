@@ -52,7 +52,13 @@ func (u URIWithOwner) Append(key string) URIWithOwner {
 }
 
 // Get decorates the given s3.GetObjectInput the fields from the URIWithOwner.
+//
+// If given a nil input, a new one will be created.
 func (u URIWithOwner) Get(input *s3.GetObjectInput) *s3.GetObjectInput {
+	if input == nil {
+		input = &s3.GetObjectInput{}
+	}
+
 	input.Bucket = aws.String(u.Bucket)
 	input.Key = aws.String(u.Key)
 	input.ExpectedBucketOwner = aws.String(u.ExpectedBucketOwner)
@@ -60,7 +66,13 @@ func (u URIWithOwner) Get(input *s3.GetObjectInput) *s3.GetObjectInput {
 }
 
 // Head decorates the given s3.HeadObjectInput the fields from the URIWithOwner.
+//
+// If given a nil input, a new one will be created.
 func (u URIWithOwner) Head(input *s3.HeadObjectInput) *s3.HeadObjectInput {
+	if input == nil {
+		input = &s3.HeadObjectInput{}
+	}
+
 	input.Bucket = aws.String(u.Bucket)
 	input.Key = aws.String(u.Key)
 	input.ExpectedBucketOwner = aws.String(u.ExpectedBucketOwner)
@@ -68,7 +80,13 @@ func (u URIWithOwner) Head(input *s3.HeadObjectInput) *s3.HeadObjectInput {
 }
 
 // Put decorates the given s3.PutObjectInput the fields from the URIWithOwner.
+//
+// If given a nil input, a new one will be created.
 func (u URIWithOwner) Put(input *s3.PutObjectInput) *s3.PutObjectInput {
+	if input == nil {
+		input = &s3.PutObjectInput{}
+	}
+
 	input.Bucket = aws.String(u.Bucket)
 	input.Key = aws.String(u.Key)
 	input.ExpectedBucketOwner = aws.String(u.ExpectedBucketOwner)
