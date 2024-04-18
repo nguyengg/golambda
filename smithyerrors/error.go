@@ -36,3 +36,13 @@ func Parse(err error) (statusCode int, service, operation, code, message string,
 
 	return
 }
+
+// StatusCode extracts the [http.ResponseError.HTTPStatusCode] from the given error.
+func StatusCode(err error) int {
+	var re *http.ResponseError
+	if errors.As(err, &re) {
+		return re.HTTPStatusCode()
+	}
+
+	return 0
+}
