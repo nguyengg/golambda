@@ -1,6 +1,7 @@
 package getenv
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,6 +17,7 @@ type SecretsOpts struct {
 	SecretId     string
 	VersionId    string
 	VersionStage string
+	Client       http.Client
 }
 
 // Secrets creates Getter that reads secrets from the AWS Parameter and Secrets Lambda extension.
@@ -24,29 +26,52 @@ type SecretsOpts struct {
 //
 // See https://docs.aws.amazon.com/secretsmanager/latest/userguide/retrieving-secrets_lambda.html.
 func Secrets(secretId string, opts ...func(*SecretsOpts)) Variable {
-	var err error
+	g, err := NewSecretsGetter(secretId, opts...)
+	if err != nil {
+		return errVar{err: err}
+	}
+
+	return Getter(func(ctx context.Context) (string, error) {
+		output, err := g.Get(ctx)
+		if err != nil {
+			return "", err
+		}
+
+		return aws.ToString(output.SecretString), nil
+	})
+}
+
+type SecretsGetter struct {
+	client http.Client
+	req    *http.Request
+}
+
+// NewSecretsGetter returns an instance of SecretsGetter that can be used to get the raw secretsmanager.GetSecretValueOutput.
+func NewSecretsGetter(secretId string, opts ...func(secretsOpts *SecretsOpts)) (*SecretsGetter, error) {
 	port := os.Getenv("PARAMETERS_SECRETS_EXTENSION_HTTP_PORT")
 	if port == "" {
-		return errVar{err: fmt.Errorf("no PARAMETERS_SECRETS_EXTENSION_HTTP_PORT")}
+		return nil, fmt.Errorf("no PARAMETERS_SECRETS_EXTENSION_HTTP_PORT")
 	}
 	if _, err := strconv.ParseInt(port, 10, 64); err != nil {
-		return errVar{err: fmt.Errorf("PARAMETERS_SECRETS_EXTENSION_HTTP_PORT is not an integer: %w", err)}
+		return nil, fmt.Errorf("PARAMETERS_SECRETS_EXTENSION_HTTP_PORT is not an integer: %w", err)
 	}
 
 	token := os.Getenv("AWS_SESSION_TOKEN")
 	if token == "" {
-		return errVar{err: fmt.Errorf("no AWS_SESSION_TOKEN")}
+		return nil, fmt.Errorf("no AWS_SESSION_TOKEN")
 	}
 
-	params := SecretsOpts{SecretId: secretId}
+	params := SecretsOpts{
+		SecretId: secretId,
+		Client:   http.Client{},
+	}
 	for _, opt := range opts {
 		opt(&params)
 	}
 
-	client := http.Client{}
 	req, err := http.NewRequest("GET", "http://localhost:"+port+"/secretsmanager/get", nil)
 	if err != nil {
-		return errVar{err: fmt.Errorf("create HTTP request error: %w", err)}
+		return nil, fmt.Errorf("create GET secrets request error: %w", err)
 	}
 
 	req.Header.Add("X-Aws-Parameters-Secrets-Token", token)
@@ -61,19 +86,25 @@ func Secrets(secretId string, opts ...func(*SecretsOpts)) Variable {
 	}
 	req.URL.RawQuery = q.Encode()
 
-	return getter(func() (string, error) {
-		res, err := client.Do(req)
-		if err != nil {
-			return "", fmt.Errorf("GET secrets manager error: %w", err)
-		}
+	return &SecretsGetter{
+		client: params.Client,
+		req:    req,
+	}, nil
+}
 
-		output := secretsmanager.GetSecretValueOutput{}
-		err = json.NewDecoder(res.Body).Decode(&output)
-		_ = res.Body.Close()
-		if err != nil {
-			return "", fmt.Errorf("decode GET secrets manager error: %w", err)
-		}
+// Get executes the GET request the AWS Parameter and Secrets Lambda extension.
+func (g *SecretsGetter) Get(ctx context.Context) (*secretsmanager.GetSecretValueOutput, error) {
+	res, err := g.client.Do(g.req.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("do GET secrets error: %w", err)
+	}
 
-		return aws.ToString(output.SecretString), nil
-	})
+	output := &secretsmanager.GetSecretValueOutput{}
+	err = json.NewDecoder(res.Body).Decode(output)
+	_ = res.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("decode GET secrets response error: %w", err)
+	}
+
+	return output, nil
 }
