@@ -120,3 +120,48 @@ func TestStringSet_UnmarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestStringSet_Delete(t *testing.T) {
+	type args struct {
+		value     string
+		lenBefore int
+		lenAfter  int
+	}
+	tests := []struct {
+		name   string
+		m      StringSet
+		args   args
+		wantOk bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "delete OK",
+			m:    []string{"a", "b", "c"},
+			args: args{
+				value:     "a",
+				lenBefore: 3,
+				lenAfter:  2,
+			},
+			wantOk: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if lenBefore := len(tt.m); lenBefore != tt.args.lenBefore {
+				t.Errorf("lenBefore = %v, want %v", lenBefore, tt.args.lenBefore)
+			}
+
+			if gotOk := tt.m.Delete(tt.args.value); gotOk != tt.wantOk {
+				t.Errorf("Delete() = %v, want %v", gotOk, tt.wantOk)
+			}
+
+			if tt.wantOk && tt.m.Has(tt.args.value) {
+				t.Errorf("Has() = %t, want %t", true, false)
+			}
+
+			if lenAfter := len(tt.m); lenAfter != tt.args.lenAfter {
+				t.Errorf("lenAfter = %v, want %v", lenAfter, tt.args.lenAfter)
+			}
+		})
+	}
+}
