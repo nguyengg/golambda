@@ -182,3 +182,70 @@ func TestStringSet_Delete(t *testing.T) {
 		})
 	}
 }
+
+func TestStringSet_Add(t *testing.T) {
+	type args struct {
+		value string
+	}
+	tests := []struct {
+		name string
+		m    StringSet
+		args args
+		want bool
+	}{
+		{
+			name: "add OK",
+			m:    []string{"a", "b"},
+			args: args{value: "c"},
+			want: true,
+		},
+		{
+			name: "add duplicate",
+			m:    []string{"a", "b"},
+			args: args{value: "b"},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.Add(tt.args.value); got != tt.want {
+				t.Errorf("Add() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNew(t *testing.T) {
+	type args struct {
+		values []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want StringSet
+	}{
+		// TODO: Add test cases.
+		{
+			name: "empty array",
+			args: args{values: []string{}},
+			want: StringSet{},
+		},
+		{
+			name: "array",
+			args: args{values: []string{"a", "b"}},
+			want: StringSet{"a", "b"},
+		},
+		{
+			name: "duplicates removed",
+			args: args{values: []string{"a", "b", "a"}},
+			want: StringSet{"a", "b"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := New(tt.args.values); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("New() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

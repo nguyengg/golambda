@@ -14,7 +14,7 @@ func New(values []string) StringSet {
 	for _, v := range values {
 		if _, ok := m[v]; !ok {
 			m[v] = true
-			s = append(values, v)
+			s = append(s, v)
 		}
 	}
 
