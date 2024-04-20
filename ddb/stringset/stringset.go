@@ -1,10 +1,5 @@
 package stringset
 
-import (
-	"encoding/json"
-	"fmt"
-)
-
 // StringSet adds convenient methods to manipulate the items in the set.
 //
 // It is imperative that tag `dynamodbav :",stringset"` is used to allow the field to be marshaled as a string set. If
@@ -66,24 +61,6 @@ func (m *StringSet) Delete(value string) (ok bool) {
 // Clear resets the array to an empty one.
 func (m *StringSet) Clear() {
 	*m = make(StringSet, 0)
-}
-
-func (m *StringSet) MarshalJSON() ([]byte, error) {
-	data, err := json.Marshal(*m)
-	if err != nil {
-		panic(err)
-	}
-	return data, nil
-}
-
-func (m *StringSet) UnmarshalJSON(data []byte) error {
-	var value []string
-	if err := json.Unmarshal(data, &value); err != nil {
-		return fmt.Errorf("invalid json")
-	}
-
-	*m = value
-	return nil
 }
 
 // IsSubset returns true if every element in this set is in the specified set (other).

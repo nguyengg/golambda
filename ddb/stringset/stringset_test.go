@@ -1,6 +1,7 @@
 package stringset
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -81,16 +82,26 @@ func TestStringSet_MarshalJSON(t *testing.T) {
 			m:    []string{"a", "b", "c"},
 			want: []byte(`["a","b","c"]`),
 		},
+		{
+			name: "marshal empty array",
+			m:    []string{},
+			want: []byte(`[]`),
+		},
+		{
+			name: "marshal empty stringset",
+			m:    make(StringSet, 0),
+			want: []byte(`[]`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.MarshalJSON()
+			got, err := json.Marshal(tt.m)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MarshalJSON() got = %s, want %s", got, tt.want)
+				t.Errorf("MarshalJSON() got = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
@@ -111,10 +122,16 @@ func TestStringSet_UnmarshalJSON(t *testing.T) {
 			m:    []string{"a", "b", "c"},
 			args: args{data: []byte(`["a","b","c"]`)},
 		},
+
+		{
+			name: "unmarshal empty array",
+			m:    []string{},
+			args: args{data: []byte(`[]`)},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.m.UnmarshalJSON(tt.args.data); (err != nil) != tt.wantErr {
+			if err := json.Unmarshal(tt.args.data, &tt.m); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
