@@ -69,7 +69,7 @@ func (m *StringSet) Clear() {
 }
 
 func (m *StringSet) MarshalJSON() ([]byte, error) {
-	data, err := json.Marshal(m)
+	data, err := json.Marshal(*m)
 	if err != nil {
 		panic(err)
 	}

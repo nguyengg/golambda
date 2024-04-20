@@ -1,6 +1,9 @@
 package stringset
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestStringSet_IsSubset(t *testing.T) {
 	type args struct {
@@ -61,6 +64,58 @@ func TestStringSet_IsSuperset(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.m.IsSuperset(tt.args.other); got != tt.want {
 				t.Errorf("IsSuperset() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStringSet_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		m       StringSet
+		want    []byte
+		wantErr bool
+	}{
+		{
+			name: "marshal",
+			m:    []string{"a", "b", "c"},
+			want: []byte(`["a","b","c"]`),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.m.MarshalJSON()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MarshalJSON() got = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStringSet_UnmarshalJSON(t *testing.T) {
+	type args struct {
+		data []byte
+	}
+	tests := []struct {
+		name    string
+		m       StringSet
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "unmarshal",
+			m:    []string{"a", "b", "c"},
+			args: args{data: []byte(`["a","b","c"]`)},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.m.UnmarshalJSON(tt.args.data); (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
