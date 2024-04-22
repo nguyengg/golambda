@@ -93,8 +93,8 @@ func (m *StringSet) IsSuperset(other StringSet) bool {
 	return true
 }
 
-// Equals returns true only if every element in this set is in the other set and vice versa.
-func (m *StringSet) Equals(other StringSet) bool {
+// Equal returns true only if every element in this set is in the other set and vice versa.
+func (m *StringSet) Equal(other StringSet) bool {
 	s := make(map[string]bool, len(*m))
 	for _, v := range *m {
 		s[v] = true

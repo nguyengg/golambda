@@ -287,8 +287,8 @@ func TestStringSet_Equals(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.Equals(tt.args.other); got != tt.want {
-				t.Errorf("Equals() = %v, want %v", got, tt.want)
+			if got := tt.m.Equal(tt.args.other); got != tt.want {
+				t.Errorf("Equal() = %v, want %v", got, tt.want)
 			}
 		})
 	}
