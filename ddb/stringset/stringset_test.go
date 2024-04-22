@@ -249,3 +249,47 @@ func TestNew(t *testing.T) {
 		})
 	}
 }
+
+func TestStringSet_Equals(t *testing.T) {
+	type args struct {
+		other StringSet
+	}
+	tests := []struct {
+		name string
+		m    StringSet
+		args args
+		want bool
+	}{
+		{
+			name: "equals",
+			m:    []string{"a", "b", "c"},
+			args: args{other: []string{"c", "b", "a"}},
+			want: true,
+		},
+		{
+			name: "empty sets are equal",
+			m:    []string{},
+			args: args{other: StringSet{}},
+			want: true,
+		},
+		{
+			name: "not equal",
+			m:    []string{"a", "b", "c"},
+			args: args{other: []string{"a", "b"}},
+			want: false,
+		},
+		{
+			name: "not equal",
+			m:    []string{"a", "b"},
+			args: args{other: []string{"a", "b", "c"}},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.Equals(tt.args.other); got != tt.want {
+				t.Errorf("Equals() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
