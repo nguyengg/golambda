@@ -26,6 +26,6 @@ func (t Table[T]) Get(ctx context.Context, key string, opts ...func(*dynamodb.Ge
 	}
 
 	v = new(T)
-	err = t.Decoder.Decode(&types.AttributeValueMemberM{Value: output.Item}, v)
+	err = t.decoder.Decode(&types.AttributeValueMemberM{Value: output.Item}, v)
 	return
 }

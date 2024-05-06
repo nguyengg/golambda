@@ -150,7 +150,7 @@ func TestNew_TimestampsEpochMillisecond(t *testing.T) {
 	table, err := New[Test](nil, "")
 	assert.NoError(t, err)
 
-	table.Now = func() time.Time {
+	table.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
@@ -185,7 +185,7 @@ func TestNew_TimestampsUnixTime(t *testing.T) {
 	table, err := New[Test](nil, "")
 	assert.NoError(t, err)
 
-	table.Now = func() time.Time {
+	table.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
@@ -224,7 +224,7 @@ func TestNew_TimestampsRFC3339Nano(t *testing.T) {
 	table, err := New[Test](nil, "")
 	assert.NoError(t, err)
 
-	table.Now = func() time.Time {
+	table.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
