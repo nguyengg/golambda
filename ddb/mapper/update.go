@@ -103,6 +103,69 @@ type UpdateOpts[T interface{}] struct {
 	Finalizer                     func(*dynamodb.UpdateItemInput)
 }
 
+// SetOrRemove adds either Set or Remove action to the update expression.
+//
+// If set is true, a SET action will be added.
+// If set is false, only when remove is true then a REMOVE action will be added.
+//
+// | set   | remove | action
+// | true  | *      | SET
+// | false | true   | REMOVE
+// | false | false  | no-op
+//
+// This is useful for distinguishing between PUT/POST (remove=true) that replaces attributes with clobbering behaviour
+// vs. PATCH (remove=false) that will only update attributes that are non-nil. An example is given:
+//
+//	func PUT(body Request) {
+//		// because it's a PUT request, if notes is empty, instead of writing empty string to database, we'll remove it.
+//		wrapper.Update(..., SetOrRemove(true, true, "notes", body.Notes))
+//	}
+//
+//	func PATCH(body Request) {
+//		// only when notes is non-empty that we'll update it. an empty notes just means caller didn't try to update it.
+//		wrapper.Update(..., opts.SetOrRemove(body.Notes != "", false, "notes", body.Notes))
+//	}
+//
+//	func Update(method string, body Request) {
+//		// an attempt to unify the methods may look like this.
+//		wrapper.Update(..., opts.SetOrRemove(body.Notes != "", method != "PATCH", "notes", body.Notes))
+//	}
+//
+// The name and value will be wrapped with an `expression.Name` and `expression.Value` so don't bother wrapping them
+// ahead of time.
+func (o *UpdateOpts[T]) SetOrRemove(set, remove bool, name string, value interface{}) *UpdateOpts[T] {
+	if set {
+		o.Update.Set(expression.Name(name), expression.Value(value))
+		return o
+	}
+
+	if remove {
+		o.Update.Remove(expression.Name(name))
+		return o
+	}
+
+	return o
+}
+
+// SetOrRemoveFunc is a variant of SetOrRemove that accepts a function that is only called to return the value to be set
+// if the `set` parameter is true.
+//
+// Use this if you may need to avoid dereferencing a null pointer. Consider using the various aws.ToString methods which
+// is nil-pointer-safe.
+func (o *UpdateOpts[T]) SetOrRemoveFunc(set, remove bool, name string, value func() interface{}) *UpdateOpts[T] {
+	if set {
+		o.Update.Set(expression.Name(name), expression.Value(value()))
+		return o
+	}
+
+	if remove {
+		o.Update.Remove(expression.Name(name))
+		return o
+	}
+
+	return o
+}
+
 // WithTableName changes the table.
 func (o *UpdateOpts[T]) WithTableName(tableName string) *UpdateOpts[T] {
 	o.Input.TableName = &tableName
