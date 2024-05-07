@@ -59,9 +59,7 @@ func TestNew_ExpectVersionAttributeNotExists(t *testing.T) {
 		Key:     "123",
 		Version: 0,
 	}
-	cond, err := mapper.expectVersion(item, reflect.ValueOf(item))
-	assert.NoError(t, err)
-	update, err := mapper.nextVersion(item, reflect.ValueOf(item))
+	update, cond, err := mapper.updateVersion(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 
 	expr, err := expression.NewBuilder().
@@ -70,7 +68,7 @@ func TestNew_ExpectVersionAttributeNotExists(t *testing.T) {
 		Build()
 	assert.NoError(t, err)
 	assert.Equal(t, "attribute_not_exists (#0)", *expr.Condition())
-	assert.Equal(t, "SET #1 = #1 + :0\n", *expr.Update())
+	assert.Equal(t, "SET #1 = :0\n", *expr.Update())
 	assert.Equal(t, map[string]string{
 		"#0": "key",
 		"#1": "version",
@@ -96,9 +94,7 @@ func TestNew_ExpectVersionIncrease(t *testing.T) {
 		Key:     "123",
 		Version: 123,
 	}
-	cond, err := mapper.expectVersion(item, reflect.ValueOf(item))
-	assert.NoError(t, err)
-	update, err := mapper.nextVersion(item, reflect.ValueOf(item))
+	update, cond, err := mapper.updateVersion(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 
 	expr, err := expression.NewBuilder().
@@ -145,7 +141,7 @@ func TestNew_TimestampsEpochMillisecond(t *testing.T) {
 		"modified": &dynamodbtypes.AttributeValueMemberN{Value: "1136239445000"},
 	}, m)
 
-	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item))
+	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)
@@ -182,7 +178,7 @@ func TestNew_TimestampsUnixTime(t *testing.T) {
 		"modified": &dynamodbtypes.AttributeValueMemberN{Value: "1136239445"},
 	}, m)
 
-	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item))
+	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)
@@ -223,7 +219,7 @@ func TestNew_TimestampsRFC3339Nano(t *testing.T) {
 		"modified": &dynamodbtypes.AttributeValueMemberS{Value: "2006-01-02T14:04:05-08:00"},
 	}, m)
 
-	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item))
+	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)

@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -20,19 +21,50 @@ type HasKey interface {
 }
 
 // HasVersion allows items to provide its own implementation for optimistic locking.
+//
+// The rest of the documentation will explain the default logic that is provided from struct tags.
 type HasVersion interface {
-	// ExpectVersion creates a condition that expects the version to equal the value in the item being passed in.
-	ExpectVersion() (expression.ConditionBuilder, error)
-	// UpdateVersion creates an update expression that sets the version attribute to a new value.
-	UpdateVersion() (expression.UpdateBuilder, error)
+	// PutVersion is used during Mapper.Put requests.
+	//
+	// PutVersion is passed the [dynamodb.PutItemInput.Item] and must modify this map to contain the version that will
+	// be written to DynamoDB. The method also returns a condition expression to verify the existing version of the item
+	// prior to the PutItem request.
+	//
+	// The tag-based implementation will return an `attribute_not_exists(#hash_key)` condition expression if the version
+	// attribute's value is the zero value.
+	PutVersion(map[string]dynamodbtypes.AttributeValue) (expression.ConditionBuilder, error)
+
+	// UpdateVersion is used during Mapper.Update requests.
+	//
+	// PutVersion is passed the update expression that must be used to update the version in DynamoDB. The method also
+	// returns a condition expression to verify the existing version of the item prior to the UpdateItem request.
+	//
+	// The tag-based implementation will return an `attribute_not_exists(#hash_key)` condition expression if the version
+	// attribute's value is the zero value.
+	UpdateVersion(expression.UpdateBuilder) (expression.UpdateBuilder, expression.ConditionBuilder, error)
+
+	// DeleteVersion is used during Mapper.Delete requests.
+	//
+	// DeleteVersion must return a condition expression to verify the existing version of the item prior to the
+	// DeleteItem request. The tag-based implementation will always add a `#version = :version` condition expression
+	// even if the current version attribute's value is the zero value.
+	DeleteVersion() (expression.ConditionBuilder, error)
 }
 
 // HasTimestamps allows items to provide its own implementation for timestamp generation.
+//
+// The rest of the documentation will explain the default logic that is provided from struct tags.
 type HasTimestamps interface {
-	// PutTimestamps is used during PutItem requests to create new timestamps.
+	// PutTimestamps is used during Mapper.Put requests.
+	//
+	// PutVersion is passed the [dynamodb.PutItemInput.Item] and must modify this map to contain the timestamps that
+	// will be written to DynamoDB.
 	PutTimestamps(map[string]dynamodbtypes.AttributeValue) error
-	// UpdateTimestamps is used during UpdateItem requests to update modified timestamps.
-	UpdateTimestamps() (expression.UpdateBuilder, error)
+
+	// UpdateTimestamps is used during Mapper.Update requests.
+	//
+	// UpdateTimestamps is passed the update expression that must be used to update the timestamps in DynamoDB.
+	UpdateTimestamps(expression.UpdateBuilder) (expression.UpdateBuilder, error)
 }
 
 // MapOpts allows customisation of the New logic to create Mapper.
@@ -255,20 +287,28 @@ func New[T interface{}](client *dynamodb.Client, tableName string, optFns ...fun
 
 	// version.
 	if typ.Implements(reflect.TypeFor[HasVersion]()) {
-		m.expectVersion = func(item T, _ reflect.Value) (cb expression.ConditionBuilder, err error) {
+		m.putVersion = func(item T, _ reflect.Value, in map[string]dynamodbtypes.AttributeValue) (expression.ConditionBuilder, error) {
 			switch i := any(item).(type) {
 			case HasVersion:
-				return i.ExpectVersion()
+				return i.PutVersion(in)
 			default:
-				return cb, fmt.Errorf("item does not implement HasVersion")
+				return expression.ConditionBuilder{}, fmt.Errorf("item does not implement HasVersion")
 			}
 		}
-		m.nextVersion = func(item T, _ reflect.Value) (ub expression.UpdateBuilder, err error) {
+		m.updateVersion = func(item T, _ reflect.Value, update expression.UpdateBuilder) (expression.UpdateBuilder, expression.ConditionBuilder, error) {
 			switch i := any(item).(type) {
 			case HasVersion:
-				return i.UpdateVersion()
+				return i.UpdateVersion(update)
 			default:
-				return ub, fmt.Errorf("item does not implement HasVersion")
+				return expression.UpdateBuilder{}, expression.ConditionBuilder{}, fmt.Errorf("item does not implement HasVersion")
+			}
+		}
+		m.deleteVersion = func(item T, _ reflect.Value) (expression.ConditionBuilder, error) {
+			switch i := any(item).(type) {
+			case HasVersion:
+				return i.DeleteVersion()
+			default:
+				return expression.ConditionBuilder{}, fmt.Errorf("item does not implement HasVersion")
 			}
 		}
 	} else {
@@ -280,24 +320,69 @@ func New[T interface{}](client *dynamodb.Client, tableName string, optFns ...fun
 				return nil, fmt.Errorf(`unsupported version field type "%s"`, versionAttribute.typeName())
 			}
 
-			m.expectVersion = func(_ T, value reflect.Value) (_ expression.ConditionBuilder, err error) {
-				var av dynamodbtypes.AttributeValue
-				var v reflect.Value
-
-				v, err = versionAttribute.get(value)
-				if v.IsZero() {
-					return expression.AttributeNotExists(expression.Name(hashKey.name)), nil
+			m.putVersion = func(_ T, value reflect.Value, in map[string]dynamodbtypes.AttributeValue) (expression.ConditionBuilder, error) {
+				v, err := versionAttribute.get(value)
+				if err != nil {
+					return expression.ConditionBuilder{}, err
 				}
 
-				av, err = m.encoder.Encode(v.Interface())
+				switch {
+				case v.IsZero():
+					in[versionAttribute.name] = &dynamodbtypes.AttributeValueMemberN{Value: "1"}
+					return expression.AttributeNotExists(expression.Name(hashKey.name)), nil
+				case v.CanInt():
+					in[versionAttribute.name] = &dynamodbtypes.AttributeValueMemberN{Value: strconv.FormatInt(v.Int()+1, 10)}
+				case v.CanUint():
+					in[versionAttribute.name] = &dynamodbtypes.AttributeValueMemberN{Value: strconv.FormatInt(int64(v.Uint()+1), 10)}
+				case v.CanFloat():
+					in[versionAttribute.name] = &dynamodbtypes.AttributeValueMemberN{Value: strconv.FormatFloat(v.Float(), 'f', -1, 64)}
+				default:
+					return expression.ConditionBuilder{}, fmt.Errorf("version attribute is not numeric, item must implement HasVersion")
+				}
+
+				av, err := m.encoder.Encode(v.Interface())
 				if err != nil {
-					return
+					return expression.ConditionBuilder{}, err
 				}
 
 				return expression.Equal(expression.Name(versionAttribute.name), expression.Value(av)), nil
 			}
-			m.nextVersion = func(_ T, _ reflect.Value) (expression.UpdateBuilder, error) {
-				return expression.Set(expression.Name(versionAttribute.name), expression.Plus(expression.Name(versionAttribute.name), expression.Value(1))), nil
+
+			m.updateVersion = func(_ T, value reflect.Value, update expression.UpdateBuilder) (expression.UpdateBuilder, expression.ConditionBuilder, error) {
+				v, err := versionAttribute.get(value)
+				if err != nil {
+					return expression.UpdateBuilder{}, expression.ConditionBuilder{}, err
+				}
+
+				if v.IsZero() {
+					update = update.Set(expression.Name(versionAttribute.name), expression.Value(1))
+					cond := expression.AttributeNotExists(expression.Name(hashKey.name))
+					return update, cond, nil
+				}
+
+				av, err := m.encoder.Encode(v.Interface())
+				if err != nil {
+					return expression.UpdateBuilder{}, expression.ConditionBuilder{}, err
+				}
+
+				update = update.Set(expression.Name(versionAttribute.name), expression.Plus(expression.Name(versionAttribute.name), expression.Value(1)))
+				cond := expression.Equal(expression.Name(versionAttribute.name), expression.Value(av))
+				return update, cond, nil
+			}
+			
+			m.deleteVersion = func(_ T, value reflect.Value) (expression.ConditionBuilder, error) {
+				v, err := versionAttribute.get(value)
+				if err != nil {
+					return expression.ConditionBuilder{}, err
+				}
+
+				av, err := m.encoder.Encode(v.Interface())
+				if err != nil {
+					return expression.ConditionBuilder{}, err
+				}
+
+				cond := expression.Equal(expression.Name(versionAttribute.name), expression.Value(av))
+				return cond, nil
 			}
 		case n > 1:
 			return nil, fmt.Errorf(`found multiple version fields (%d) in type "%s"`, n, typ.Name())
@@ -320,12 +405,12 @@ func New[T interface{}](client *dynamodb.Client, tableName string, optFns ...fun
 				return fmt.Errorf("item does not implement HasTimestamps")
 			}
 		}
-		m.updateTimestamps = func(item T, _ reflect.Value) (ub expression.UpdateBuilder, err error) {
+		m.updateTimestamps = func(item T, _ reflect.Value, update expression.UpdateBuilder) (expression.UpdateBuilder, error) {
 			switch i := any(item).(type) {
 			case HasTimestamps:
-				return i.UpdateTimestamps()
+				return i.UpdateTimestamps(update)
 			default:
-				return ub, fmt.Errorf("item does not implement HasTimestamps")
+				return expression.UpdateBuilder{}, fmt.Errorf("item does not implement HasTimestamps")
 			}
 		}
 	} else {
@@ -355,26 +440,27 @@ func New[T interface{}](client *dynamodb.Client, tableName string, optFns ...fun
 
 			// updateTimestamps only cares about modifiedTime so we can skip this if the item doesn't have any modifiedTime.
 			if y == 1 {
-				m.updateTimestamps = func(_ T, value reflect.Value) (_ expression.UpdateBuilder, err error) {
-					var av dynamodbtypes.AttributeValue
-					var v reflect.Value
-					now := m.now()
-
+				m.updateTimestamps = func(_ T, value reflect.Value, update expression.UpdateBuilder) (expression.UpdateBuilder, error) {
 					if modifiedTimeAttribute.unixtime {
-						av, err = attributevalue.UnixTime(now).MarshalDynamoDBAttributeValue()
-					} else {
-						v, err = modifiedTimeAttribute.get(value)
+						av, err := attributevalue.UnixTime(m.now()).MarshalDynamoDBAttributeValue()
 						if err != nil {
-							return
+							return update, err
 						}
-						updateValue := reflect.ValueOf(now).Convert(v.Type())
-						av, err = m.encoder.Encode(updateValue.Interface())
-					}
-					if err != nil {
-						return
+
+						update = update.Set(expression.Name(modifiedTimeAttribute.name), expression.Value(av))
+						return update, nil
 					}
 
-					return expression.Set(expression.Name(modifiedTimeAttribute.name), expression.Value(av)), nil
+					v, err := modifiedTimeAttribute.get(value)
+					if err != nil {
+						return update, err
+					}
+					updateValue := reflect.ValueOf(m.now()).Convert(v.Type())
+					av, err := m.encoder.Encode(updateValue.Interface())
+					if err == nil {
+						update = update.Set(expression.Name(modifiedTimeAttribute.name), expression.Value(av))
+					}
+					return update, err
 				}
 			}
 
@@ -436,10 +522,11 @@ func New[T interface{}](client *dynamodb.Client, tableName string, optFns ...fun
 // Mapper contains metadata about items in a DynamoDB table computed from struct tags.
 type Mapper[T interface{}] struct {
 	getKey           func(T, reflect.Value) (map[string]dynamodbtypes.AttributeValue, error)
-	expectVersion    func(T, reflect.Value) (expression.ConditionBuilder, error)
-	nextVersion      func(T, reflect.Value) (expression.UpdateBuilder, error)
+	putVersion       func(T, reflect.Value, map[string]dynamodbtypes.AttributeValue) (expression.ConditionBuilder, error)
+	updateVersion    func(T, reflect.Value, expression.UpdateBuilder) (expression.UpdateBuilder, expression.ConditionBuilder, error)
+	deleteVersion    func(T, reflect.Value) (expression.ConditionBuilder, error)
 	putTimestamps    func(T, reflect.Value, map[string]dynamodbtypes.AttributeValue) error
-	updateTimestamps func(T, reflect.Value) (expression.UpdateBuilder, error)
+	updateTimestamps func(T, reflect.Value, expression.UpdateBuilder) (expression.UpdateBuilder, error)
 
 	client    *dynamodb.Client
 	tableName string
