@@ -1,4 +1,4 @@
-package v2
+package mapper
 
 import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -12,35 +12,30 @@ import (
 
 func TestNew_ValidPrimaryKey(t *testing.T) {
 	type Test struct {
-		Key string `hashkey:"myKey"`
+		Key string `dynamodbav:"myKey,hashkey"`
 	}
-	got, err := New[Test](nil, "myTable")
+	mapper, err := New[Test](nil, "myTable")
 	assert.NoError(t, err)
-	assert.Equal(t, "myTable", got.TableName)
-	assert.Equal(t, "myKey", got.HashKeyName)
 
 	item := Test{Key: "myKeyValue"}
-	av, err := got.Key(item, reflect.ValueOf(item))
+	av, err := mapper.getKey(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]dynamodbtypes.AttributeValue{"myKey": &dynamodbtypes.AttributeValueMemberS{Value: "myKeyValue"}}, av)
 }
 
 func TestNew_ValidCompositeKey(t *testing.T) {
 	type Test struct {
-		Hash  int    `hashkey:"hash"`
-		Range []byte `sortkey:"range"`
+		Hash  int    `dynamodbav:"hash,hashkey"`
+		Range []byte `dynamodbav:"range,sortkey"`
 	}
-	got, err := New[Test](nil, "myTable")
+	mapper, err := New[Test](nil, "myTable")
 	assert.NoError(t, err)
-	assert.Equal(t, "myTable", got.TableName)
-	assert.Equal(t, "hash", got.HashKeyName)
-	assert.Equal(t, "range", got.SortKeyName)
 
 	item := Test{
 		Hash:  1234,
 		Range: []byte("hello, world!"),
 	}
-	av, err := got.Key(item, reflect.ValueOf(item))
+	av, err := mapper.getKey(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 	assert.Equal(t, av, map[string]dynamodbtypes.AttributeValue{
 		"hash":  &dynamodbtypes.AttributeValueMemberN{Value: "1234"},
@@ -48,35 +43,15 @@ func TestNew_ValidCompositeKey(t *testing.T) {
 	})
 }
 
-func TestNew_NoHashKey(t *testing.T) {
-	type Test struct {
-		Key string
-	}
-	_, err := New[Test](nil, "")
-	assert.ErrorContains(t, err, `no field with tag "hashkey" in type "Test"`)
-}
-
-func TestNew_DuplicateKeysAndAttributes(t *testing.T) {
-	_, err := New[struct {
-		KeyA string `hashkey:"a"`
-		KeyB string `hashkey:"b"`
-	}](nil, "")
-	assert.ErrorContains(t, err, `multiple fields with tag "hashkey" found in type ""`)
-
-	_, err = New[struct {
-		KeyA string `sortkey:"a"`
-		KeyB string `sortkey:"b"`
-	}](nil, "")
-	assert.ErrorContains(t, err, `multiple fields with tag "sortkey" found in type ""`)
-}
-
 func TestNew_ExpectVersionAttributeNotExists(t *testing.T) {
 	type Test struct {
-		Key     string `hashkey:"key"`
-		Version int    `version:"version"`
+		Key     string `dynamodbav:"key,hashkey"`
+		Version int    `dynamodbav:"version,version"`
 	}
 
-	table, err := New[Test](nil, "")
+	mapper, err := New[Test](nil, "", func(opts *MapOpts) {
+		opts.MustHaveVersion = true
+	})
 	assert.NoError(t, err)
 
 	// with initial version being 0, ExpectVersion will add attribute_not_exists, and NextVersion will always increase by 1.
@@ -84,9 +59,9 @@ func TestNew_ExpectVersionAttributeNotExists(t *testing.T) {
 		Key:     "123",
 		Version: 0,
 	}
-	cond, err := table.ExpectVersion(item, reflect.ValueOf(item))
+	cond, err := mapper.expectVersion(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
-	update, err := table.NextVersion(item, reflect.ValueOf(item))
+	update, err := mapper.nextVersion(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 
 	expr, err := expression.NewBuilder().
@@ -107,11 +82,13 @@ func TestNew_ExpectVersionAttributeNotExists(t *testing.T) {
 
 func TestNew_ExpectVersionIncrease(t *testing.T) {
 	type Test struct {
-		Key     string `hashkey:"key"`
-		Version int    `version:"version"`
+		Key     string `dynamodbav:"key,hashkey"`
+		Version int    `dynamodbav:"version,version"`
 	}
 
-	table, err := New[Test](nil, "")
+	mapper, err := New[Test](nil, "", func(opts *MapOpts) {
+		opts.MustHaveVersion = true
+	})
 	assert.NoError(t, err)
 
 	// with initial version being non-0, ExpectVersion will have an Equal condition, and NextVersion will always increase by 1.
@@ -119,9 +96,9 @@ func TestNew_ExpectVersionIncrease(t *testing.T) {
 		Key:     "123",
 		Version: 123,
 	}
-	cond, err := table.ExpectVersion(item, reflect.ValueOf(item))
+	cond, err := mapper.expectVersion(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
-	update, err := table.NextVersion(item, reflect.ValueOf(item))
+	update, err := mapper.nextVersion(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 
 	expr, err := expression.NewBuilder().
@@ -142,15 +119,17 @@ func TestNew_ExpectVersionIncrease(t *testing.T) {
 
 func TestNew_TimestampsEpochMillisecond(t *testing.T) {
 	type Test struct {
-		Key          string                     `hashkey:"key"`
-		CreatedTime  timestamp.EpochMillisecond `createdTime:"created"`
-		ModifiedTime timestamp.EpochMillisecond `modifiedTime:"modified"`
+		Key          string                     `dynamodbav:"key,hashkey"`
+		CreatedTime  timestamp.EpochMillisecond `dynamodbav:"created,createdTime"`
+		ModifiedTime timestamp.EpochMillisecond `dynamodbav:"modified,modifiedTime"`
 	}
 
-	table, err := New[Test](nil, "")
+	mapper, err := New[Test](nil, "", func(opts *MapOpts) {
+		opts.MustHaveTimestamps = true
+	})
 	assert.NoError(t, err)
 
-	table.now = func() time.Time {
+	mapper.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
@@ -159,14 +138,14 @@ func TestNew_TimestampsEpochMillisecond(t *testing.T) {
 	}
 
 	m := make(map[string]dynamodbtypes.AttributeValue)
-	err = table.PutTimestamps(item, reflect.ValueOf(item), m)
+	err = mapper.putTimestamps(item, reflect.ValueOf(item), m)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]dynamodbtypes.AttributeValue{
 		"created":  &dynamodbtypes.AttributeValueMemberN{Value: "1136239445000"},
 		"modified": &dynamodbtypes.AttributeValueMemberN{Value: "1136239445000"},
 	}, m)
 
-	update, err := table.UpdateTimestamps(item, reflect.ValueOf(item))
+	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)
@@ -177,15 +156,17 @@ func TestNew_TimestampsEpochMillisecond(t *testing.T) {
 
 func TestNew_TimestampsUnixTime(t *testing.T) {
 	type Test struct {
-		Key          string    `hashkey:"key"`
-		CreatedTime  time.Time `createdTime:"created" dynamodbav:",unixtime"`
-		ModifiedTime time.Time `modifiedTime:"modified" dynamodbav:",unixtime"`
+		Key          string    `dynamodbav:"key,hashkey"`
+		CreatedTime  time.Time `dynamodbav:"created,unixtime,createdTime"`
+		ModifiedTime time.Time `dynamodbav:"modified,unixtime,modifiedTime"`
 	}
 
-	table, err := New[Test](nil, "")
+	mapper, err := New[Test](nil, "", func(opts *MapOpts) {
+		opts.MustHaveTimestamps = true
+	})
 	assert.NoError(t, err)
 
-	table.now = func() time.Time {
+	mapper.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
@@ -194,14 +175,14 @@ func TestNew_TimestampsUnixTime(t *testing.T) {
 	}
 
 	m := make(map[string]dynamodbtypes.AttributeValue)
-	err = table.PutTimestamps(item, reflect.ValueOf(item), m)
+	err = mapper.putTimestamps(item, reflect.ValueOf(item), m)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]dynamodbtypes.AttributeValue{
 		"created":  &dynamodbtypes.AttributeValueMemberN{Value: "1136239445"},
 		"modified": &dynamodbtypes.AttributeValueMemberN{Value: "1136239445"},
 	}, m)
 
-	update, err := table.UpdateTimestamps(item, reflect.ValueOf(item))
+	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)
@@ -216,15 +197,17 @@ func TestNew_TimestampsUnixTime(t *testing.T) {
 
 func TestNew_TimestampsRFC3339Nano(t *testing.T) {
 	type Test struct {
-		Key          string    `hashkey:"key"`
-		CreatedTime  time.Time `createdTime:"created"`
-		ModifiedTime time.Time `modifiedTime:"modified"`
+		Key          string    `dynamodbav:"key,hashkey"`
+		CreatedTime  time.Time `dynamodbav:"created,createdTime"`
+		ModifiedTime time.Time `dynamodbav:"modified,modifiedTime"`
 	}
 
-	table, err := New[Test](nil, "")
+	mapper, err := New[Test](nil, "", func(opts *MapOpts) {
+		opts.MustHaveTimestamps = true
+	})
 	assert.NoError(t, err)
 
-	table.now = func() time.Time {
+	mapper.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
@@ -233,14 +216,14 @@ func TestNew_TimestampsRFC3339Nano(t *testing.T) {
 	}
 
 	m := make(map[string]dynamodbtypes.AttributeValue)
-	err = table.PutTimestamps(item, reflect.ValueOf(item), m)
+	err = mapper.putTimestamps(item, reflect.ValueOf(item), m)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]dynamodbtypes.AttributeValue{
 		"created":  &dynamodbtypes.AttributeValueMemberS{Value: "2006-01-02T14:04:05-08:00"},
 		"modified": &dynamodbtypes.AttributeValueMemberS{Value: "2006-01-02T14:04:05-08:00"},
 	}, m)
 
-	update, err := table.UpdateTimestamps(item, reflect.ValueOf(item))
+	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)
