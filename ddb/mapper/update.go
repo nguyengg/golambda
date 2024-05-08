@@ -166,6 +166,26 @@ func (o *UpdateOpts[T]) SetOrRemoveFunc(set, remove bool, name string, value fun
 	return o
 }
 
+func (o *UpdateOpts[T]) Set(name string, value interface{}) *UpdateOpts[T] {
+	o.Update.Set(expression.Name(name), expression.Value(value))
+	return o
+}
+
+func (o *UpdateOpts[T]) Remove(name string) *UpdateOpts[T] {
+	o.Update.Remove(expression.Name(name))
+	return o
+}
+
+func (o *UpdateOpts[T]) Add(name string, value interface{}) *UpdateOpts[T] {
+	o.Update.Add(expression.Name(name), expression.Value(value))
+	return o
+}
+
+func (o *UpdateOpts[T]) Delete(name string, value interface{}) *UpdateOpts[T] {
+	o.Update.Delete(expression.Name(name), expression.Value(value))
+	return o
+}
+
 // WithTableName changes the table.
 func (o *UpdateOpts[T]) WithTableName(tableName string) *UpdateOpts[T] {
 	o.Input.TableName = &tableName
