@@ -80,6 +80,10 @@ func (m Mapper[T]) Update(ctx context.Context, item T, required func(*UpdateOpts
 	opts.Input.ExpressionAttributeValues = e.Values()
 	opts.Input.UpdateExpression = e.Update()
 
+	if opts.Finalizer != nil {
+		opts.Finalizer(opts.Input)
+	}
+
 	return m.client.UpdateItem(ctx, opts.Input)
 }
 
