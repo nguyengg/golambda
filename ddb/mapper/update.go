@@ -139,12 +139,12 @@ type UpdateOpts[T interface{}] struct {
 // ahead of time.
 func (o *UpdateOpts[T]) SetOrRemove(set, remove bool, name string, value interface{}) *UpdateOpts[T] {
 	if set {
-		o.Update.Set(expression.Name(name), expression.Value(value))
+		o.Update = o.Update.Set(expression.Name(name), expression.Value(value))
 		return o
 	}
 
 	if remove {
-		o.Update.Remove(expression.Name(name))
+		o.Update = o.Update.Remove(expression.Name(name))
 		return o
 	}
 
@@ -158,12 +158,12 @@ func (o *UpdateOpts[T]) SetOrRemove(set, remove bool, name string, value interfa
 // is nil-pointer-safe.
 func (o *UpdateOpts[T]) SetOrRemoveFunc(set, remove bool, name string, value func() interface{}) *UpdateOpts[T] {
 	if set {
-		o.Update.Set(expression.Name(name), expression.Value(value()))
+		o.Update = o.Update.Set(expression.Name(name), expression.Value(value()))
 		return o
 	}
 
 	if remove {
-		o.Update.Remove(expression.Name(name))
+		o.Update = o.Update.Remove(expression.Name(name))
 		return o
 	}
 
@@ -180,31 +180,31 @@ func (o *UpdateOpts[T]) SetOrRemoveStringPointer(name string, ptr *string) *Upda
 	}
 
 	if v := *ptr; v != "" {
-		o.Update.Set(expression.Name(name), expression.Value(v))
+		o.Update = o.Update.Set(expression.Name(name), expression.Value(v))
 		return o
 	}
 
-	o.Update.Remove(expression.Name(name))
+	o.Update = o.Update.Remove(expression.Name(name))
 	return o
 }
 
 func (o *UpdateOpts[T]) Set(name string, value interface{}) *UpdateOpts[T] {
-	o.Update.Set(expression.Name(name), expression.Value(value))
+	o.Update = o.Update.Set(expression.Name(name), expression.Value(value))
 	return o
 }
 
 func (o *UpdateOpts[T]) Remove(name string) *UpdateOpts[T] {
-	o.Update.Remove(expression.Name(name))
+	o.Update = o.Update.Remove(expression.Name(name))
 	return o
 }
 
 func (o *UpdateOpts[T]) Add(name string, value interface{}) *UpdateOpts[T] {
-	o.Update.Add(expression.Name(name), expression.Value(value))
+	o.Update = o.Update.Add(expression.Name(name), expression.Value(value))
 	return o
 }
 
 func (o *UpdateOpts[T]) Delete(name string, value interface{}) *UpdateOpts[T] {
-	o.Update.Delete(expression.Name(name), expression.Value(value))
+	o.Update = o.Update.Delete(expression.Name(name), expression.Value(value))
 	return o
 }
 
