@@ -18,6 +18,13 @@ type Opts struct {
 	Projection *expression.ProjectionBuilder
 }
 
+// WithTableName changes the table name in Opts.Input.
+func WithTableName(tableName string) func(*Opts) {
+	return func(opts *Opts) {
+		opts.Input.TableName = &tableName
+	}
+}
+
 // WithProjection adds a projection expression.
 func WithProjection(name string, names ...string) func(*Opts) {
 	return func(opts *Opts) {

@@ -21,6 +21,13 @@ type Opts struct {
 	DisableAutoGenerateTimestamps timestamp.AutoGenerateFlag
 }
 
+// WithTableName changes the table name in Opts.Input.
+func WithTableName(tableName string) func(*Opts) {
+	return func(opts *Opts) {
+		opts.Input.TableName = &tableName
+	}
+}
+
 // DisableOptimisticLocking disables logic around [model.Versioned].
 func DisableOptimisticLocking() func(*Opts) {
 	return func(opts *Opts) {

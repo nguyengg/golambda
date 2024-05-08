@@ -19,6 +19,13 @@ type Opts struct {
 	DisableOptimisticLocking bool
 }
 
+// WithTableName changes the table name in Opts.Input.
+func WithTableName(tableName string) func(*Opts) {
+	return func(opts *Opts) {
+		opts.Input.TableName = &tableName
+	}
+}
+
 // DisableOptimisticLocking disables logic around [model.Versioned].
 func DisableOptimisticLocking() func(*Opts) {
 	return func(opts *Opts) {
