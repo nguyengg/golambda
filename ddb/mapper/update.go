@@ -166,6 +166,24 @@ func (o *UpdateOpts[T]) SetOrRemoveFunc(set, remove bool, name string, value fun
 	return o
 }
 
+// SetOrRemoveStringPointer is a specialization of SetOrRemove for string pointer value.
+//
+// If ptr is a nil pointer, no action is taken. If ptr dereferences to an empty string, a REMOVE action is used.
+// A non-empty string otherwise will result in a SET action.
+func (o *UpdateOpts[T]) SetOrRemoveStringPointer(name string, ptr *string) *UpdateOpts[T] {
+	if ptr == nil {
+		return o
+	}
+
+	if v := *ptr; v != "" {
+		o.Update.Set(expression.Name(name), expression.Value(v))
+		return o
+	}
+
+	o.Update.Remove(expression.Name(name))
+	return o
+}
+
 func (o *UpdateOpts[T]) Set(name string, value interface{}) *UpdateOpts[T] {
 	o.Update.Set(expression.Name(name), expression.Value(value))
 	return o
