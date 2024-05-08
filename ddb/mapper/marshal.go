@@ -19,11 +19,11 @@ func (m Mapper[T]) MarshalMap(in T) (map[string]types.AttributeValue, error) {
 }
 
 // Unmarshal is an alias to attributevalue.Unmarshal using the internal attributevalue.Decoder.
-func (m Mapper[T]) Unmarshal(av types.AttributeValue, out T) error {
+func (m Mapper[T]) Unmarshal(av types.AttributeValue, out *T) error {
 	return m.decoder.Decode(av, out)
 }
 
 // UnmarshalMap is an alias to attributevalue.UnmarshalMap using the internal attributevalue.Decoder.
-func (m Mapper[T]) UnmarshalMap(item map[string]types.AttributeValue, out T) error {
+func (m Mapper[T]) UnmarshalMap(item map[string]types.AttributeValue, out *T) error {
 	return m.decoder.Decode(&types.AttributeValueMemberM{Value: item}, out)
 }
