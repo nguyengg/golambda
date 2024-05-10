@@ -35,7 +35,7 @@ func (m Mapper[T]) Delete(ctx context.Context, item T, optFns ...func(*DeleteOpt
 	}
 
 	if opts.OptimisticLockingEnabled {
-		if m.putVersion == nil {
+		if m.deleteVersion == nil {
 			return nil, fmt.Errorf("OptimisticLockingEnabled must be false because item does not implement HasVersion")
 		}
 
