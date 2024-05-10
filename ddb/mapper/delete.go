@@ -25,10 +25,10 @@ func (m Mapper[T]) Delete(ctx context.Context, item T, optFns ...func(*DeleteOpt
 	opts := &DeleteOpts[T]{
 		Item: item,
 		Input: &dynamodb.DeleteItemInput{
-			Key:      key,
+			Key:       key,
 			TableName: &m.tableName,
 		},
-		OptimisticLockingEnabled:      m.deleteVersion != nil,
+		OptimisticLockingEnabled: m.deleteVersion != nil,
 	}
 	for _, fn := range optFns {
 		fn(opts)
@@ -75,11 +75,11 @@ func (m Mapper[T]) Delete(ctx context.Context, item T, optFns ...func(*DeleteOpt
 //
 // Finalizer is the modifier applied to the final DeleteOpts.Input right before executing the DynamoDB DeleteItem request.
 type DeleteOpts[T interface{}] struct {
-	Item                          T
-	Input                         *dynamodb.DeleteItemInput
-	Condition                     *expression.ConditionBuilder
-	OptimisticLockingEnabled      bool
-	Finalizer                     func(*dynamodb.DeleteItemInput)
+	Item                     T
+	Input                    *dynamodb.DeleteItemInput
+	Condition                *expression.ConditionBuilder
+	OptimisticLockingEnabled bool
+	Finalizer                func(*dynamodb.DeleteItemInput)
 }
 
 // WithTableName changes the table.

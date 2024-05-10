@@ -369,7 +369,7 @@ func New[T interface{}](client *dynamodb.Client, tableName string, optFns ...fun
 				cond := expression.Equal(expression.Name(versionAttribute.name), expression.Value(av))
 				return update, cond, nil
 			}
-			
+
 			m.deleteVersion = func(_ T, value reflect.Value) (expression.ConditionBuilder, error) {
 				v, err := versionAttribute.get(value)
 				if err != nil {

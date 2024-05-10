@@ -16,6 +16,7 @@ require (
 	github.com/aws/smithy-go v1.20.2
 	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.8.1
+	golang.org/x/time v0.5.0
 )
 
 require (
