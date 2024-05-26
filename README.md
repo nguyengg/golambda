@@ -1,4 +1,7 @@
 # Go goodies for AWS Lambda
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/nguyengg/golambda.svg)](https://pkg.go.dev/github.com/nguyengg/golambda)
+
 The main features of this module are the various wrappers around different AWS Lambda events, for example:
 * [Lambda Function URL](https://pkg.go.dev/github.com/nguyengg/golambda/lambdafunctionurl), supporting both BUFFERED and RESPONSE_STREAM modes.
 * [API Gateway HTTP Integration](https://pkg.go.dev/github.com/nguyengg/golambda/apigatewayhttpapi) with 
