@@ -18,8 +18,9 @@ import (
 // Usage:
 //
 //	cfg, err := config.LoadDefaultConfig(context.TODO(), metrics.Default)
-func Default(o *config.LoadOptions) {
+func Default(o *config.LoadOptions) error {
 	o.APIOptions = append(o.APIOptions, ClientSideMetricsMiddleware())
+	return nil
 }
 
 // ClientSideMetricsMiddleware creates a new middleware to add client-side latency metrics about the requests.
