@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	awsmw "github.com/aws/aws-sdk-go-v2/aws/middleware"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/smithy-go"
 	smithymw "github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
@@ -12,21 +13,25 @@ import (
 	"time"
 )
 
-// ClientSideMetricsMiddleware adds client-side latency metrics about the requests made by this stack.
+// Default adds a ClientSideMetricsMiddleware to the config.
+//
+// Usage:
+//
+//	cfg, err := config.LoadDefaultConfig(context.TODO(), metrics.Default)
+func Default(o *config.LoadOptions) {
+	o.APIOptions = append(o.APIOptions, ClientSideMetricsMiddleware())
+}
+
+// ClientSideMetricsMiddleware creates a new middleware to add client-side latency metrics about the requests.
 //
 // Usage:
 //
 //	cfg, _ := config.LoadDefaultConfig(ctx)
 //	cfg.APIOptions = append(cfg.APIOptions, metrics.ClientSideMetricsMiddleware())
 //
-// A metrics.Metrics instance must be available from context by the time the middleware receives a response.
+// A metrics.Metrics instance must be available from context by the time the middleware receives a response. At the
+// moment, there are no customizations available yet.
 func ClientSideMetricsMiddleware(options ...Option) func(stack *smithymw.Stack) error {
-	c := &clientSideMetricsMiddleware{}
-
-	for _, option := range options {
-		option(c)
-	}
-
 	return func(stack *smithymw.Stack) error {
 		return stack.Deserialize.Add(&clientSideMetricsMiddleware{}, smithymw.After)
 	}
@@ -34,15 +39,12 @@ func ClientSideMetricsMiddleware(options ...Option) func(stack *smithymw.Stack) 
 
 // Should implement middleware.DeserializeMiddleware.
 type clientSideMetricsMiddleware struct {
-	disableDebugLoggingInput bool
 }
 
+// Option allows customization of the ClientSideMetricsMiddleware.
+//
+// At the moment, there are no customizations available yet.
 type Option func(*clientSideMetricsMiddleware)
-
-// DisableDebugLoggingInput disables feature where the requests are logged at Debug level.
-func DisableDebugLoggingInput(c *clientSideMetricsMiddleware) {
-	c.disableDebugLoggingInput = true
-}
 
 func (c clientSideMetricsMiddleware) ID() string {
 	return "ClientSideLatencyMetrics"
