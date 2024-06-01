@@ -14,7 +14,7 @@ import (
 //
 // The returned item is nil if there is no matching item ([dynamodb.GetItemOutput.Item] is empty).
 func (m Mapper[T]) Get(ctx context.Context, item T, optFns ...func(*GetOpts[T])) (*T, *dynamodb.GetItemOutput, error) {
-	key, err := m.getKey(item, reflect.ValueOf(item))
+	key, err := m.model.getKey(item, reflect.ValueOf(item))
 	if err != nil {
 		return nil, nil, fmt.Errorf("create GetItem's Key error: %w", err)
 	}
@@ -23,7 +23,7 @@ func (m Mapper[T]) Get(ctx context.Context, item T, optFns ...func(*GetOpts[T]))
 		Item: item,
 		Input: &dynamodb.GetItemInput{
 			Key:       key,
-			TableName: &m.tableName,
+			TableName: &m.model.tableName,
 		},
 	}
 	for _, fn := range optFns {
@@ -45,7 +45,7 @@ func (m Mapper[T]) Get(ctx context.Context, item T, optFns ...func(*GetOpts[T]))
 	}
 
 	res := new(T)
-	err = m.decoder.Decode(&types.AttributeValueMemberM{Value: output.Item}, res)
+	err = m.model.decoder.Decode(&types.AttributeValueMemberM{Value: output.Item}, res)
 	if err != nil {
 		return nil, output, fmt.Errorf("unmarshal item error: %w", err)
 	}

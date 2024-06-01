@@ -18,7 +18,7 @@ func TestNew_ValidPrimaryKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	item := Test{Key: "myKeyValue"}
-	av, err := mapper.getKey(item, reflect.ValueOf(item))
+	av, err := mapper.model.getKey(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]dynamodbtypes.AttributeValue{"myKey": &dynamodbtypes.AttributeValueMemberS{Value: "myKeyValue"}}, av)
 }
@@ -35,7 +35,7 @@ func TestNew_ValidCompositeKey(t *testing.T) {
 		Hash:  1234,
 		Range: []byte("hello, world!"),
 	}
-	av, err := mapper.getKey(item, reflect.ValueOf(item))
+	av, err := mapper.model.getKey(item, reflect.ValueOf(item))
 	assert.NoError(t, err)
 	assert.Equal(t, av, map[string]dynamodbtypes.AttributeValue{
 		"hash":  &dynamodbtypes.AttributeValueMemberN{Value: "1234"},
@@ -59,7 +59,7 @@ func TestNew_ExpectVersionAttributeNotExists(t *testing.T) {
 		Key:     "123",
 		Version: 0,
 	}
-	update, cond, err := mapper.updateVersion(item, reflect.ValueOf(item), expression.UpdateBuilder{})
+	update, cond, err := mapper.model.updateVersion(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 
 	expr, err := expression.NewBuilder().
@@ -94,7 +94,7 @@ func TestNew_ExpectVersionIncrease(t *testing.T) {
 		Key:     "123",
 		Version: 123,
 	}
-	update, cond, err := mapper.updateVersion(item, reflect.ValueOf(item), expression.UpdateBuilder{})
+	update, cond, err := mapper.model.updateVersion(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 
 	expr, err := expression.NewBuilder().
@@ -125,7 +125,7 @@ func TestNew_TimestampsEpochMillisecond(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mapper.now = func() time.Time {
+	mapper.model.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
@@ -134,14 +134,14 @@ func TestNew_TimestampsEpochMillisecond(t *testing.T) {
 	}
 
 	m := make(map[string]dynamodbtypes.AttributeValue)
-	err = mapper.putTimestamps(item, reflect.ValueOf(item), m)
+	err = mapper.model.putTimestamps(item, reflect.ValueOf(item), m)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]dynamodbtypes.AttributeValue{
 		"created":  &dynamodbtypes.AttributeValueMemberN{Value: "1136239445000"},
 		"modified": &dynamodbtypes.AttributeValueMemberN{Value: "1136239445000"},
 	}, m)
 
-	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
+	update, err := mapper.model.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)
@@ -162,7 +162,7 @@ func TestNew_TimestampsUnixTime(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mapper.now = func() time.Time {
+	mapper.model.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
@@ -171,14 +171,14 @@ func TestNew_TimestampsUnixTime(t *testing.T) {
 	}
 
 	m := make(map[string]dynamodbtypes.AttributeValue)
-	err = mapper.putTimestamps(item, reflect.ValueOf(item), m)
+	err = mapper.model.putTimestamps(item, reflect.ValueOf(item), m)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]dynamodbtypes.AttributeValue{
 		"created":  &dynamodbtypes.AttributeValueMemberN{Value: "1136239445"},
 		"modified": &dynamodbtypes.AttributeValueMemberN{Value: "1136239445"},
 	}, m)
 
-	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
+	update, err := mapper.model.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)
@@ -203,7 +203,7 @@ func TestNew_TimestampsRFC3339Nano(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mapper.now = func() time.Time {
+	mapper.model.now = func() time.Time {
 		return time.Unix(1136239445, 0)
 	}
 
@@ -212,14 +212,14 @@ func TestNew_TimestampsRFC3339Nano(t *testing.T) {
 	}
 
 	m := make(map[string]dynamodbtypes.AttributeValue)
-	err = mapper.putTimestamps(item, reflect.ValueOf(item), m)
+	err = mapper.model.putTimestamps(item, reflect.ValueOf(item), m)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]dynamodbtypes.AttributeValue{
 		"created":  &dynamodbtypes.AttributeValueMemberS{Value: "2006-01-02T14:04:05-08:00"},
 		"modified": &dynamodbtypes.AttributeValueMemberS{Value: "2006-01-02T14:04:05-08:00"},
 	}, m)
 
-	update, err := mapper.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
+	update, err := mapper.model.updateTimestamps(item, reflect.ValueOf(item), expression.UpdateBuilder{})
 	assert.NoError(t, err)
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	assert.NoError(t, err)

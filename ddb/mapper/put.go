@@ -27,21 +27,21 @@ func (m Mapper[T]) Put(ctx context.Context, item T, optFns ...func(*PutOpts[T]))
 		Item: item,
 		Input: &dynamodb.PutItemInput{
 			Item:      mav,
-			TableName: &m.tableName,
+			TableName: &m.model.tableName,
 		},
-		OptimisticLockingEnabled:      m.putVersion != nil,
-		AutoGenerateTimestampsEnabled: m.putTimestamps != nil,
+		OptimisticLockingEnabled:      m.model.putVersion != nil,
+		AutoGenerateTimestampsEnabled: m.model.putTimestamps != nil,
 	}
 	for _, fn := range optFns {
 		fn(opts)
 	}
 
 	if opts.OptimisticLockingEnabled {
-		if m.putVersion == nil {
+		if m.model.putVersion == nil {
 			return nil, fmt.Errorf("OptimisticLockingEnabled must be false because item does not implement HasVersion")
 		}
 
-		c, err := m.putVersion(item, value, opts.Input.Item)
+		c, err := m.model.putVersion(item, value, opts.Input.Item)
 		if err != nil {
 			return nil, fmt.Errorf("create version condition expression error: %w", err)
 		}
@@ -51,11 +51,11 @@ func (m Mapper[T]) Put(ctx context.Context, item T, optFns ...func(*PutOpts[T]))
 	}
 
 	if opts.AutoGenerateTimestampsEnabled {
-		if m.putTimestamps == nil {
+		if m.model.putTimestamps == nil {
 			return nil, fmt.Errorf("AutoGenerateTimestampsEnabled must be false because item does not implement HasTimestamps")
 		}
 
-		if err = m.putTimestamps(item, value, opts.Input.Item); err != nil {
+		if err = m.model.putTimestamps(item, value, opts.Input.Item); err != nil {
 			return nil, fmt.Errorf("create timestamp attributes error: %w", err)
 		}
 	}

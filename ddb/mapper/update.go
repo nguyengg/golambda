@@ -21,7 +21,7 @@ import (
 // request.
 func (m Mapper[T]) Update(ctx context.Context, item T, required func(*UpdateOpts[T]), optFns ...func(*UpdateOpts[T])) (*dynamodb.UpdateItemOutput, error) {
 	value := reflect.ValueOf(item)
-	key, err := m.getKey(item, value)
+	key, err := m.model.getKey(item, value)
 	if err != nil {
 		return nil, fmt.Errorf("create UpdateItem's Key error: %w", err)
 	}
@@ -30,10 +30,10 @@ func (m Mapper[T]) Update(ctx context.Context, item T, required func(*UpdateOpts
 		Item: item,
 		Input: &dynamodb.UpdateItemInput{
 			Key:       key,
-			TableName: &m.tableName,
+			TableName: &m.model.tableName,
 		},
-		OptimisticLockingEnabled:      m.updateVersion != nil,
-		AutoGenerateTimestampsEnabled: m.updateTimestamps != nil,
+		OptimisticLockingEnabled:      m.model.updateVersion != nil,
+		AutoGenerateTimestampsEnabled: m.model.updateTimestamps != nil,
 	}
 	required(opts)
 	for _, fn := range optFns {
@@ -41,11 +41,11 @@ func (m Mapper[T]) Update(ctx context.Context, item T, required func(*UpdateOpts
 	}
 
 	if opts.OptimisticLockingEnabled {
-		if m.updateVersion == nil {
+		if m.model.updateVersion == nil {
 			return nil, fmt.Errorf("OptimisticLockingEnabled must be false because item does not implement HasVersion")
 		}
 
-		update, cond, err := m.updateVersion(item, value, opts.Update)
+		update, cond, err := m.model.updateVersion(item, value, opts.Update)
 		if err != nil {
 			return nil, fmt.Errorf("create version condition expression error: %w", err)
 		}
@@ -56,11 +56,11 @@ func (m Mapper[T]) Update(ctx context.Context, item T, required func(*UpdateOpts
 	}
 
 	if opts.AutoGenerateTimestampsEnabled {
-		if m.updateTimestamps == nil {
+		if m.model.updateTimestamps == nil {
 			return nil, fmt.Errorf("AutoGenerateTimestampsEnabled must be false because item does not implement HasTimestamps")
 		}
 
-		opts.Update, err = m.updateTimestamps(item, value, opts.Update)
+		opts.Update, err = m.model.updateTimestamps(item, value, opts.Update)
 		if err != nil {
 			return nil, fmt.Errorf("create timestamp attributes error: %w", err)
 		}

@@ -17,7 +17,7 @@ import (
 // you need to apply additional modifiers right before executing the DynamoDB DeleteItem request.
 func (m Mapper[T]) Delete(ctx context.Context, item T, optFns ...func(*DeleteOpts[T])) (*dynamodb.DeleteItemOutput, error) {
 	value := reflect.ValueOf(item)
-	key, err := m.getKey(item, value)
+	key, err := m.model.getKey(item, value)
 	if err != nil {
 		return nil, fmt.Errorf("create DeleteItem's Key error: %w", err)
 	}
@@ -26,20 +26,20 @@ func (m Mapper[T]) Delete(ctx context.Context, item T, optFns ...func(*DeleteOpt
 		Item: item,
 		Input: &dynamodb.DeleteItemInput{
 			Key:       key,
-			TableName: &m.tableName,
+			TableName: &m.model.tableName,
 		},
-		OptimisticLockingEnabled: m.deleteVersion != nil,
+		OptimisticLockingEnabled: m.model.deleteVersion != nil,
 	}
 	for _, fn := range optFns {
 		fn(opts)
 	}
 
 	if opts.OptimisticLockingEnabled {
-		if m.deleteVersion == nil {
+		if m.model.deleteVersion == nil {
 			return nil, fmt.Errorf("OptimisticLockingEnabled must be false because item does not implement HasVersion")
 		}
 
-		c, err := m.deleteVersion(item, value)
+		c, err := m.model.deleteVersion(item, value)
 		if err != nil {
 			return nil, fmt.Errorf("create version condition expression error: %w", err)
 		}
