@@ -16,6 +16,11 @@ func New[T interface{}](client *dynamodb.Client, tableName string, optFns ...fun
 	return &Mapper[T]{model, client}, nil
 }
 
+// NewFromModel creates a new Mapper instance from a previously parsed Model.
+func NewFromModel[T any](client *dynamodb.Client, model *Model[T]) (*Mapper[T], error) {
+	return &Mapper[T]{model, client}, nil
+}
+
 // Mapper contains a Model and a DynamoDB client.
 type Mapper[T interface{}] struct {
 	model  *Model[T]
