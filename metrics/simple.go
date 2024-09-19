@@ -5,16 +5,18 @@ import (
 	"github.com/rs/zerolog"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
-// SimpleMetrics is not thread-safe and should not be shared across goroutines without external synchronisation.
+// SimpleMetrics is thread-safe by use of mutex.
 type SimpleMetrics struct {
 	properties map[string]pvType
 	counters   map[string]int64
 	floaters   map[string]float64
 	timings    map[string]TimingStats
 	startTime  time.Time
+	mu         sync.Mutex
 }
 
 var _ Metrics = &SimpleMetrics{}
@@ -44,6 +46,9 @@ func (m *SimpleMetrics) WithContext(ctx context.Context) context.Context {
 }
 
 func (m *SimpleMetrics) SetProperty(key, value string) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if reservedKeys[key] {
 		return m
 	}
@@ -58,6 +63,9 @@ func (m *SimpleMetrics) SetProperty(key, value string) Metrics {
 }
 
 func (m *SimpleMetrics) SetInt64Property(key string, value int64) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if reservedKeys[key] {
 		return m
 	}
@@ -72,6 +80,9 @@ func (m *SimpleMetrics) SetInt64Property(key string, value int64) Metrics {
 }
 
 func (m *SimpleMetrics) SetFloat64Property(key string, value float64) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if reservedKeys[key] {
 		return m
 	}
@@ -86,6 +97,9 @@ func (m *SimpleMetrics) SetFloat64Property(key string, value float64) Metrics {
 }
 
 func (m *SimpleMetrics) SetJSONProperty(key string, value interface{}) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if reservedKeys[key] {
 		return m
 	}
@@ -100,6 +114,9 @@ func (m *SimpleMetrics) SetJSONProperty(key string, value interface{}) Metrics {
 }
 
 func (m *SimpleMetrics) SetCount(key string, value int64, ensureExist ...string) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.counters == nil {
 		m.counters = make(map[string]int64, 3+len(ensureExist))
 		m.counters[CounterKeyFault] = 0
@@ -117,6 +134,9 @@ func (m *SimpleMetrics) SetCount(key string, value int64, ensureExist ...string)
 }
 
 func (m *SimpleMetrics) AddCount(key string, delta int64, ensureExist ...string) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.counters == nil {
 		m.counters = make(map[string]int64, 3+len(ensureExist))
 		m.counters[CounterKeyFault] = 0
@@ -134,6 +154,9 @@ func (m *SimpleMetrics) AddCount(key string, delta int64, ensureExist ...string)
 }
 
 func (m *SimpleMetrics) IncrementCount(key string) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.counters == nil {
 		m.counters = map[string]int64{
 			// key: 1,
@@ -149,6 +172,9 @@ func (m *SimpleMetrics) IncrementCount(key string) Metrics {
 }
 
 func (m *SimpleMetrics) Faulted() Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.counters == nil {
 		m.counters = map[string]int64{
 			CounterKeyFault:    1,
@@ -162,6 +188,9 @@ func (m *SimpleMetrics) Faulted() Metrics {
 }
 
 func (m *SimpleMetrics) Panicked() Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.counters == nil {
 		m.counters = map[string]int64{
 			CounterKeyFault:    0,
@@ -175,6 +204,9 @@ func (m *SimpleMetrics) Panicked() Metrics {
 }
 
 func (m *SimpleMetrics) SetFloat(key string, value float64, ensureExist ...string) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.floaters == nil {
 		m.floaters = make(map[string]float64, 1+len(ensureExist))
 	}
@@ -190,6 +222,9 @@ func (m *SimpleMetrics) SetFloat(key string, value float64, ensureExist ...strin
 }
 
 func (m *SimpleMetrics) AddFloat(key string, delta float64, ensureExist ...string) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.floaters == nil {
 		m.floaters = make(map[string]float64, 1+len(ensureExist))
 	}
@@ -205,6 +240,9 @@ func (m *SimpleMetrics) AddFloat(key string, delta float64, ensureExist ...strin
 }
 
 func (m *SimpleMetrics) SetTiming(key string, duration time.Duration) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.timings == nil {
 		m.timings = map[string]TimingStats{key: NewTimingStats(duration)}
 		return m
@@ -215,6 +253,9 @@ func (m *SimpleMetrics) SetTiming(key string, duration time.Duration) Metrics {
 }
 
 func (m *SimpleMetrics) AddTiming(key string, delta time.Duration) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.timings == nil {
 		m.timings = map[string]TimingStats{key: NewTimingStats(delta)}
 	}
@@ -238,6 +279,9 @@ func (m *SimpleMetrics) SetStatusCode(statusCode int) Metrics {
 }
 
 func (m *SimpleMetrics) SetStatusCodeWithFlag(statusCode int, flag int) Metrics {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.properties == nil {
 		m.properties = map[string]pvType{"statusCode": intPv{v: int64(statusCode)}}
 	} else {
@@ -260,6 +304,9 @@ func (m *SimpleMetrics) Log() {
 }
 
 func (m *SimpleMetrics) LogWithEndTime(endTime time.Time) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	logger := zerolog.New(os.Stderr)
 	e := logger.Log().
 		Int64(ReservedKeyStartTime, m.startTime.UnixNano()/int64(time.Millisecond)).
