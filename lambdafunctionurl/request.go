@@ -56,7 +56,7 @@ func (c *baseContext[T]) ParseRequestBodyAsFormData() (url.Values, error) {
 		return url.ParseQuery(c.request.Body)
 	}
 
-	data, err := base64.RawStdEncoding.DecodeString(c.request.Body)
+	data, err := base64.StdEncoding.DecodeString(c.request.Body)
 	if err != nil {
 		return nil, err
 	}
