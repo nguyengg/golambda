@@ -61,6 +61,10 @@ type Context interface {
 	QueryParamParseInt(key string, base, bitSize int) (int64, bool, error)
 	// RequestCookie returns cookie value from the request.
 	RequestCookie(key string) string
+	// ParseRequestBodyAsFormData attempts to parse the request body as application/x-www-form-urlencoded content.
+	//
+	// The method will not check if the request's content type if "application/x-www-form-urlencoded".
+	ParseRequestBodyAsFormData() (url.Values, error)
 	// UnmarshalRequestBody parses the request body as JSON.
 	UnmarshalRequestBody(v interface{}) error
 	// UnmarshalRequestBodyWithOpts parses the request body as JSON with additional options for the decoding process.

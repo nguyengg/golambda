@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -48,6 +49,19 @@ func (c *baseContext[T]) QueryParamParseInt(key string, base, bitSize int) (int6
 
 func (c *baseContext[T]) RequestCookie(key string) string {
 	return c.requestCookies[key]
+}
+
+func (c *baseContext[T]) ParseRequestBodyAsFormData() (url.Values, error) {
+	if !c.request.IsBase64Encoded {
+		return url.ParseQuery(c.request.Body)
+	}
+
+	data, err := base64.RawStdEncoding.DecodeString(c.request.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return url.ParseQuery(string(data))
 }
 
 func (c *baseContext[T]) UnmarshalRequestBody(v interface{}) error {
