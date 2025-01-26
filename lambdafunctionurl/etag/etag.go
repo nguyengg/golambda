@@ -81,3 +81,18 @@ func ParseDirectives(value string) (*Directives, error) {
 
 	return &Directives{ETags: etags}, nil
 }
+
+// Match returns true if [Directives.Any] is true or if one of the [Directives.ETags] is equal to the given value.
+func (d Directives) Match(value string) bool {
+	if d.Any {
+		return true
+	}
+
+	for _, etag := range d.ETags {
+		if etag.Value == value {
+			return true
+		}
+	}
+
+	return false
+}
