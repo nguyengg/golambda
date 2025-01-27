@@ -5,18 +5,18 @@ import (
 	"os"
 )
 
-// Variable defines ways to retrieve a string variable.
-type Variable interface {
-	Get() (string, error)
-	GetWithContext(ctx context.Context) (string, error)
-	MustGet() string
-	MustGetWithContext(ctx context.Context) string
+// Variable defines ways to retrieve a variable.
+type Variable[T any] interface {
+	Get() (T, error)
+	GetWithContext(ctx context.Context) (T, error)
+	MustGet() T
+	MustGetWithContext(ctx context.Context) T
 }
 
 // Env calls os.Getenv and returns that value in subsequent calls.
 //
 // See Getenv if you need something that calls os.Getenv on every invocation.
-func Env(key string) Variable {
+func Env(key string) Variable[string] {
 	v := os.Getenv(key)
 	return Getter(func(ctx context.Context) (string, error) {
 		return v, nil
@@ -27,7 +27,7 @@ func Env(key string) Variable {
 //
 // Most of the time, Env suffices because environment variables are not updated that often. Use Getenv if you have a use
 // case where the environment variables might be updated by some other processes.
-func Getenv(key string) Variable {
+func Getenv(key string) Variable[string] {
 	return Getter(func(ctx context.Context) (string, error) {
 		return os.Getenv(key), nil
 	})
@@ -55,27 +55,3 @@ func (g Getter) MustGetWithContext(ctx context.Context) string {
 	}
 	return v
 }
-
-// err implements the Variable interface for an error.
-type errVar struct {
-	err error
-}
-
-func (e errVar) Get() (string, error) {
-	return "", e.err
-}
-
-func (e errVar) GetWithContext(_ context.Context) (string, error) {
-	return "", e.err
-}
-
-func (e errVar) MustGet() string {
-	panic(e.err)
-}
-
-func (e errVar) MustGetWithContext(_ context.Context) string {
-	panic(e.err)
-}
-
-var _ Variable = &errVar{}
-var _ Variable = (*errVar)(nil)

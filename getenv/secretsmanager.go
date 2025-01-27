@@ -25,10 +25,10 @@ type SecretsOpts struct {
 // If you need to customize the request with version, label, and/or with decryption, pass in a function to modify those values.
 //
 // See https://docs.aws.amazon.com/secretsmanager/latest/userguide/retrieving-secrets_lambda.html.
-func Secrets(secretId string, opts ...func(*SecretsOpts)) Variable {
+func Secrets(secretId string, opts ...func(*SecretsOpts)) Variable[string] {
 	g, err := NewSecretsGetter(secretId, opts...)
 	if err != nil {
-		return errVar{err: err}
+		return errVar[string]{err: err}
 	}
 
 	return Getter(func(ctx context.Context) (string, error) {

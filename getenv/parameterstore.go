@@ -26,10 +26,10 @@ type ParameterOpts struct {
 // If you need to customize the request with version, label, and/or with decryption, pass in a function to modify those values.
 //
 // See https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html#ps-integration-lambda-extensions-sample-commands.
-func Parameter(name string, opts ...func(*ParameterOpts)) Variable {
+func Parameter(name string, opts ...func(*ParameterOpts)) Variable[string] {
 	g, err := NewParameterGetter(name, opts...)
 	if err != nil {
-		return errVar{err: err}
+		return errVar[string]{err: err}
 	}
 
 	return Getter(func(ctx context.Context) (string, error) {
