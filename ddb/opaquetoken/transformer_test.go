@@ -54,7 +54,7 @@ func Test_aesTransformer_EncodeDecode(t *testing.T) {
 	}
 }
 
-func TestTokenizer_EncodeDecodeWithAES(t *testing.T) {
+func TestConverter_EncodeDecodeWithAES(t *testing.T) {
 	key := []byte("onvIzKsW6Ec2Q5VqS49zrNlmvrvibh8e")
 
 	type args struct {
@@ -83,19 +83,19 @@ func TestTokenizer_EncodeDecodeWithAES(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tokenizer, err := NewWithAES(key)
+			c, err := NewWithAES(key)
 			if err != nil {
 				t.Errorf("NewWithAES() error = %v", err)
 				return
 			}
 
-			token, err := tokenizer.Encode(tt.args.key)
+			token, err := c.Encode(tt.args.key)
 			if err != nil {
 				t.Errorf("Encode() error = %v", err)
 				return
 			}
 
-			got, err := tokenizer.Decode(token)
+			got, err := c.Decode(token)
 			if err != nil {
 				t.Errorf("Decode() error = %v", err)
 				return

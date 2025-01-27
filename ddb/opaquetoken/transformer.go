@@ -17,14 +17,14 @@ type Transformer interface {
 	Decode(string) (string, error)
 }
 
-// NewWithAES creates a new Tokenizer with AES encryption and decryption.
-func NewWithAES(secretKey []byte) (*Tokenizer, error) {
+// NewWithAES creates a new Converter with AES encryption and decryption.
+func NewWithAES(secretKey []byte) (*Converter, error) {
 	c, err := aes.NewCipher(secretKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Tokenizer{Transformer: aesTransformer{c}}, nil
+	return &Converter{Transformer: aesTransformer{c}}, nil
 }
 
 type aesTransformer struct {

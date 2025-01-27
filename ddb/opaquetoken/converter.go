@@ -7,19 +7,20 @@ import (
 	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-// Tokenizer converts from DynamoDB's last evaluated key to pagination token and vice versa for query and scan operations.
+// Converter converts from DynamoDB's last evaluated key to pagination token and vice versa, intended to be used for
+// query and scan operations.
 //
 // The default value is ready for use without any encryption. Prefer NewWithAES to conform to opaque token principle.
 //
 // Per specifications, only three data types (S, N, or B) can be partition key or sort key. The pagination token will
 // be the DynamoDB JSON blob of the evaluated key, which should have no more than 2 entries.
-type Tokenizer struct {
+type Converter struct {
 	// Transformer can be used to encrypt/decrypt the tokens to conform to opaque token principle.
 	Transformer Transformer
 }
 
 // Encode converts the given last evaluated key to the pagination token.
-func (t Tokenizer) Encode(key map[string]dynamodbtypes.AttributeValue) (string, error) {
+func (c Converter) Encode(key map[string]dynamodbtypes.AttributeValue) (string, error) {
 	switch n := len(key); n {
 	case 1, 2:
 	default:
@@ -56,17 +57,17 @@ func (t Tokenizer) Encode(key map[string]dynamodbtypes.AttributeValue) (string, 
 		return "", fmt.Errorf("marshal token as JSON error: %w", err)
 	}
 
-	if t.Transformer != nil {
-		return t.Transformer.Encode(string(token))
+	if c.Transformer != nil {
+		return c.Transformer.Encode(string(token))
 	}
 
 	return string(token), nil
 }
 
 // Decode converts the given pagination token to exclusive start key.
-func (t Tokenizer) Decode(token string) (key map[string]dynamodbtypes.AttributeValue, err error) {
-	if t.Transformer != nil {
-		if token, err = t.Transformer.Decode(token); err != nil {
+func (c Converter) Decode(token string) (key map[string]dynamodbtypes.AttributeValue, err error) {
+	if c.Transformer != nil {
+		if token, err = c.Transformer.Decode(token); err != nil {
 			return
 		}
 	}

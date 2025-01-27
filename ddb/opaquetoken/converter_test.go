@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestTokenizer_Encode(t *testing.T) {
+func TestConverter_Encode(t *testing.T) {
 	type fields struct {
 		Transformer Transformer
 	}
@@ -43,10 +43,10 @@ func TestTokenizer_Encode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tokenizer := Tokenizer{
+			c := Converter{
 				Transformer: tt.fields.Transformer,
 			}
-			got, err := tokenizer.Encode(tt.args.key)
+			got, err := c.Encode(tt.args.key)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Encode() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -58,7 +58,7 @@ func TestTokenizer_Encode(t *testing.T) {
 	}
 }
 
-func TestTokenizer_Decode(t *testing.T) {
+func TestConverter_Decode(t *testing.T) {
 	type fields struct {
 		Transformer Transformer
 	}
@@ -94,10 +94,10 @@ func TestTokenizer_Decode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tokenizer := Tokenizer{
+			c := Converter{
 				Transformer: tt.fields.Transformer,
 			}
-			gotKey, err := tokenizer.Decode(tt.args.token)
+			gotKey, err := c.Decode(tt.args.token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Decode() error = %v, wantErr %v", err, tt.wantErr)
 				return
