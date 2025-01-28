@@ -17,6 +17,10 @@ def main():
         prog='build.py',
         description='Build a Lambda Go handler and optionally update the associated function.',
         epilog="""The script can be updated with `curl --proto '=https' -fo build.py https://raw.githubusercontent.com/nguyengg/golambda/main/build.py`""")
+    parser.add_argument('--assume-role',
+                        dest='role_arn', type=str, metavar='arn:aws:iam::123456789012:role/my-role',
+                        help='If --assume-role is given a role ARN, this role will be assumed to produce the '
+                             'credentials that are used to update Lambda functions.')
     parser.add_argument('-b', '--build', action='store_true',
                         help='If -b is given, `go build` is always executed. If -b is give but not -u, stop after '
                              'build. If neither -b nor -u are given then both actions take place in sequence (implicit '
@@ -104,7 +108,7 @@ def main():
         with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as f:
             f.write(output, "bootstrap")
 
-        update_and_wait(functions, archive)
+        update_and_wait(functions, archive, args.role_arn)
 
         # only delete if we've done any function update.
         if args.delete and build:
@@ -112,8 +116,17 @@ def main():
             os.remove(output)
 
 
-def update_and_wait(functions, file):
-    client = boto3.client('lambda')
+def update_and_wait(functions, file, role_arn):
+    if role_arn:
+        sts_client = boto3.client('sts')
+        response = sts_client.assume_role(RoleArn=role_arn, RoleSessionName="EnforceLogGroupsRetention")
+        credentials = response['Credentials']
+        client = boto3.client('lambda',
+                              aws_access_key_id=credentials['AccessKeyId'],
+                              aws_secret_access_key=credentials['SecretAccessKey'],
+                              aws_session_token=credentials['SessionToken'])
+    else:
+        client = boto3.client('lambda')
 
     for function_name in functions:
         print(f"updating function {function_name} with {file}")
