@@ -116,7 +116,7 @@ def main():
             os.remove(output)
 
 
-def update_and_wait(functions, file, role_arn):
+def update_and_wait(functions, file, role_arn=None):
     if role_arn:
         sts_client = boto3.client('sts')
         response = sts_client.assume_role(RoleArn=role_arn, RoleSessionName="EnforceLogGroupsRetention")
