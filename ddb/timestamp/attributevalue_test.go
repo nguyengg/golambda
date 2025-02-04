@@ -1,12 +1,13 @@
 package timestamp
 
 import (
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	. "github.com/nguyengg/golambda/must"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	. "github.com/nguyengg/golambda/must"
 )
 
 type AttributeValueItem struct {
